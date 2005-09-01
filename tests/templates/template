@@ -1,0 +1,11 @@
+[<header]
+ <h1>Hello [=@name]\[!</h1>
+ [for i in 1..6
+   if i % 2 == 0]
+     <b>Hello [=@name + "\]"]!</b>
+   [else]
+     <i>Hello [!@name + "\]"]!</i>
+   [end
+ end]
+ </body>
+</html>
