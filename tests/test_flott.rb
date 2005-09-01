@@ -8,7 +8,7 @@ class TC_Flott < Test::Unit::TestCase
   include Flott
 
   def setup
-    @parser = Parser.new
+    @parser = Parser.new('tests/templates')
     @template = File.read(File.join(
       File.dirname(__FILE__), 'templates', 'template'))
   end
