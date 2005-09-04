@@ -68,7 +68,7 @@ __EOT
   end
 
   def test_error
-    assert_raises(Parser::CompileError) do
+    assert_raises(Parser::CallError) do
       Parser.new('<bla>[= [</bla>').evaluate
     end
     assert_raises(Parser::CallError) do

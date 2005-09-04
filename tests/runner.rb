@@ -5,7 +5,10 @@ require 'test/unit/testsuite'
 $:.unshift File.expand_path(File.dirname($0))
 $:.unshift 'lib'
 $:.unshift '../lib'
-#require 'coverage'
+begin
+  require 'coverage'
+rescue LoadError
+end
 require 'test_flott'
 
 class TS_AllTests
