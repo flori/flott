@@ -64,6 +64,7 @@ module Flott
     end
 
     class ParserState < Struct.new(:mode, :opened, :last_open, :text, :compiled)
+      # Transform text mode parts to compiled code parts.
       def text2compiled
         return if text.empty?
         compiled << %{print '}
@@ -72,6 +73,7 @@ module Flott
         text.clear
       end
 
+      # Return the whole compiled code as a string.
       def compiled_string
         compiled.join.untaint
       end
@@ -91,7 +93,8 @@ module Flott
         raise EvalError.wrap(e)
       end
     end
-    
+   
+    # Include the template _filename_ at the current place 
     def include_template(s, filename)
       filename.untaint
       if @workdir
@@ -99,9 +102,9 @@ module Flott
       end
       if File.readable?(filename)
         s.text2compiled
-        source = File.read(filename)
+        source  = File.read(filename)
         workdir = File.dirname(filename)
-        parser = self.class.new(source, workdir)
+        parser  = self.class.new(source, workdir)
         parser.compile_inner(s)
       else
         raise CompileError, "Cannot open #{filename} for inclusion!"
@@ -213,8 +216,7 @@ module Flott
 end
 
 if $0 == __FILE__
-  filename = ARGV.shift
-  parser = if filename
+  parser = if filename = ARGV.shift
     Flott::Parser.new(File.read(filename), File.dirname(filename))
   else
     Flott::Parser.new(STDIN.read)
