@@ -8,23 +8,7 @@ class TC_Flott < Test::Unit::TestCase
   include Flott
 
   def setup
-    @parser = Parser.new('tests/templates')
-    @template = File.read(File.join(
-      File.dirname(__FILE__), 'templates', 'template'))
-  end
-
-  def test_foo
-    parser = Parser.new
-    assert_kind_of Parser, parser
-  end
-
-  def test_compile
-    assert @parser.compile(@template)
-    assert @parser.wellformed?(@template)
-  end
-
-  def test_execute
-    expected =<<__EOT
+    @expected =<<__EOT
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
    "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -51,28 +35,47 @@ class TC_Flott < Test::Unit::TestCase
  </body>
 </html>
 __EOT
+    workdir = File.join(File.dirname(__FILE__), 'templates')
+    @parser = Parser.new(File.read(File.join(workdir, 'template')), workdir)
+  end
+
+  def test_foo
+    assert_kind_of Parser, @parser
+  end
+
+  def test_compile
+    assert @parser.compile
+    assert @parser.wellformed?
+  end
+
+  def test_execute
     env = Object.new
     env.instance_variable_set :@name, 'Florian'
     output = ''
     $stdout = StringIO.new(output)
-    @parser.evaluate(@template, env) 
-    assert_equal(expected, output)
+    @parser.evaluate(env) 
+    assert_equal(@expected, output)
+  end
+
+  def test_compile
+    env = Object.new
+    env.instance_variable_set :@name, 'Florian'
     output = ''
     $stdout = StringIO.new(output)
-    compiled = @parser.compile(@template)
+    compiled = @parser.compile
     Parser.evaluate(compiled, env)
-    assert_equal(expected, output)
+    assert_equal(@expected, output)
   end
 
   def test_error
     assert_raises(Parser::CompileError) do
-      @parser.evaluate('<bla>[= [</bla>')
+      Parser.new('<bla>[= [</bla>').evaluate
     end
     assert_raises(Parser::CallError) do
-      @parser.evaluate('<bla>[</bla>')
+      Parser.new('<bla>[</bla>').evaluate
     end
     assert_raises(Parser::EvalError) do
-      @parser.evaluate('lambda { |x| ')
+      Parser.new('lambda { |x| ').evaluate
     end
   end
 end
