@@ -52,7 +52,7 @@ module Flott
     end
 
     # Reload time in seconds for the template files of this Cache.
-    attr_reader :reload_time
+    attr_accessor :reload_time
 
     # Returns all page names that can be cached by this Cache. These are
     # the template files under _rootdir_.
