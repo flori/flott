@@ -28,6 +28,9 @@ class TC_Cache < Test::Unit::TestCase
     template2 = @cache.get('template2')
     assert_kind_of Template, template2
     assert_equal template2, @cache.get('template2')
+    @cache.reload_time = -1
+    template = @cache.get('template')
+    assert template != @cache.get('template')
   end
 end
   # vim: set et sw=2 ts=2:
