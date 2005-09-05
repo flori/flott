@@ -69,13 +69,13 @@ __EOT
   end
 
   def test_error
-    assert_raises(Parser::CallError) do
+    assert_raises(CallError) do
       Parser.new('<bla>[= [</bla>').evaluate
     end
-    assert_raises(Parser::CallError) do
+    assert_raises(CallError) do
       Parser.new('<bla>[</bla>').evaluate
     end
-    assert_raises(Parser::EvalError) do
+    assert_raises(EvalError) do
       Parser.new('lambda { |x| ').evaluate
     end
   end

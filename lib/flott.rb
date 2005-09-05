@@ -1,6 +1,77 @@
 require 'strscan'
 
 module Flott
+# This module includes the Flott::Parser class, that can be used to 
+# compile # Flott-Templates to Ruby Proc objects.
+# 
+# If two template files are saved in the current directory.
+# One file "header":
+#  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+#     "http://www.w3.org/TR/html4/strict.dtd">
+#  <html>
+#   <head>
+#    <title>Hello [=@name]!</title>
+#    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
+#   </head>
+#   <body>
+# And one file "template":
+#  [<header]
+#   <h1>Hello [=@name]!</h1>
+#   [for i in 1..6
+#     if i % 2 == 0]
+#       <b>Hello [=@name]!</b>
+#     [else]
+#       <i>Hello [=@name]!</i>
+#     [end
+#   end]
+#   </body>
+#  </html>
+# 
+# The parser can be used like this
+#  fp = Flott::Parser.from_filename('template')
+#  env = Object.new
+#  env.instance_variable_set :@name, "Florian"
+#  puts fp.evaluate(env)
+#
+# The output is created by including "header" into "template" with the
+# <tt>[<filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
+# <tt>[print @name]</tt> while <tt>[=@name]</tt> first calls
+# Flott::Parser::escape on @name. It's also possible to just print or puts
+# strings.
+#
+# Note the use of the assignment to the instance variable @name before
+# executing the template. The state passed to Parser#evaluate as
+# an environment and can be referenced in the template itself with
+# <tt>[=@name]</tt>.
+#
+# After execution the output is:
+#  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+#     "http://www.w3.org/TR/html4/strict.dtd">
+#  <html>
+#   <head>
+#    <title>Hello Florian!</title>
+#    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
+#   </head>
+#   <body>
+#  
+#   <h1>Hello Florian!</h1>
+#  
+#       <i>Hello Florian!</i>
+#  
+#       <b>Hello Florian!</b>
+#  
+#       <i>Hello Florian!</i>
+#  
+#       <b>Hello Florian!</b>
+#  
+#       <i>Hello Florian!</i>
+#  
+#       <b>Hello Florian!</b>
+#  
+#   </body>
+#  </html>
+
+
   class FlottException < StandardError
     def self.wrap(exception)
       wrapper = new(exception.message)
@@ -53,7 +124,7 @@ module Flott
     ESC       =   /\\/
 
     # Creates a Parser object. _workdir_ is the directory, on which
-    # [<file] inclusions are based.
+    # template inclusions are based.
     def initialize(source, workdir = nil)
       if workdir
         @workdir = File.expand_path(workdir)
@@ -118,7 +189,7 @@ module Flott
       end
     end
 
-    def compile_inner(s)
+    def compile_inner(s)  # :nodoc:
       until eos?
         if s.mode == :text 
           case
@@ -194,7 +265,8 @@ module Flott
 
     # First compiles the source template and evaluates it in the environment
     # env. If no environment is given, a newly created environment is used.
-    def evaluate(env = Object.new)
+    def evaluate(env = Object.new, &block)
+      env.instance_eval(&block) if block
       compile.call(env)
       self
     rescue SyntaxError => e
@@ -203,7 +275,8 @@ module Flott
 
     # The already compiled ruby code is evaluated in the environment env.
     # If no environment is given, a newly created environment is used.
-    def self.evaluate(compiled, env = Object.new)
+    def self.evaluate(compiled, env = Object.new, &block)
+      env.instance_eval(&block) if block
       compiled.call(env)
       self
     rescue SyntaxError => e
