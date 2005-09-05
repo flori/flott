@@ -255,6 +255,8 @@ p m
       else
         @workdir = File.expand_path(Dir.pwd)
       end
+      @ruby = RubyMode.new
+      @text = TextMode.new
       @ss = StringScanner.new(source)
     end
 
@@ -313,75 +315,81 @@ p @filename
       @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
+    class TextMode
+      def scan(ss, s)
+        case
+        when @ss.scan(ESCOPEN)
+          s.text << '['
+        when @ss.scan(INCOPEN)
+          s.last_open = :INCOPEN
+          include_template(s, @ss[1])
+        when @ss.scan(PRIOPEN)
+          s.last_open = :PRIOPEN
+          s.mode      = :ruby
+          s.text2compiled
+          s.compiled << 'print Flott::Parser::escape(begin '
+        when @ss.scan(RAWOPEN)
+          s.last_open = :RAWOPEN
+          s.mode      = :ruby
+          s.text2compiled
+          s.compiled << 'print(begin '
+        when @ss.scan(COMOPEN)
+          s.last_open = :COMOPEN
+          s.mode      = :ruby
+          s.text2compiled
+          s.compiled << "\n=begin\n"
+        when @ss.scan(OPEN)
+          s.last_open = :OPEN
+          s.mode      = :ruby
+          s.text2compiled
+        when @ss.scan(CLOSE)
+          s.text << @ss[0]
+        when @ss.scan(TEXT)
+          s.text << @ss[0].gsub(/'/, %{\\\\'}) if @ss[0]
+        else
+          raise CompileError, "unknown tokens '#{peek(40)}'"
+        end
+      end
+    end
+
+    class RubyMode
+      def scan(ss, s)
+        case
+        when @ss.scan(CLOSE) && s.opened == 0
+          s.mode = :text
+          case s.last_open
+          when :PRIOPEN
+            s.compiled << ' end);'
+          when :RAWOPEN
+            s.compiled << ' end.to_s);'
+          when :COMOPEN
+            s.compiled << "\n=end\n"
+          else
+            s.compiled << ';'
+          end
+          s.last_open = nil
+        when @ss.scan(ESCCLOSE)
+          s.compiled << @ss[0]
+        when @ss.scan(CLOSE) && opened != 0
+          s.opened -= 1
+          s.compiled << @ss[0]
+        when @ss.scan(ESCOPEN)
+          s.opened += 1
+          s.compiled << @ss[0]
+        when @ss.scan(OPEN)
+          s.opened += 1
+          s.compiled << @ss[0]
+        when @ss.scan(TEXT)
+          s.compiled << @ss[0]
+        else
+          raise CompileError, "unknown tokens '#{peek(40)}'"
+        end
+      end
+    end
+
     def compile_inner(s)  # :nodoc:
       until @ss.eos?
-        if s.mode == :text 
-          case
-          when @ss.scan(ESCOPEN)
-            s.text << '['
-          when @ss.scan(INCOPEN)
-            s.last_open = :INCOPEN
-            include_template(s, @ss[1])
-          when @ss.scan(PRIOPEN)
-            s.last_open = :PRIOPEN
-            s.mode      = :ruby
-            s.text2compiled
-            s.compiled << 'print Flott::Parser::escape(begin '
-          when @ss.scan(RAWOPEN)
-            s.last_open = :RAWOPEN
-            s.mode      = :ruby
-            s.text2compiled
-            s.compiled << 'print(begin '
-          when @ss.scan(COMOPEN)
-            s.last_open = :COMOPEN
-            s.mode      = :ruby
-            s.text2compiled
-            s.compiled << "\n=begin\n"
-          when @ss.scan(OPEN)
-            s.last_open = :OPEN
-            s.mode      = :ruby
-            s.text2compiled
-          when @ss.scan(CLOSE)
-            s.text << @ss[0]
-          when @ss.scan(TEXT)
-            s.text << @ss[0].gsub(/'/, %{\\\\'}) if @ss[0]
-          else
-            raise CompileError, "unknown tokens '#{peek(40)}'"
-          end
-        elsif s.mode == :ruby
-          case
-          when @ss.scan(CLOSE) && s.opened == 0
-            s.mode = :text
-            case s.last_open
-            when :PRIOPEN
-              s.compiled << ' end);'
-            when :RAWOPEN
-              s.compiled << ' end.to_s);'
-            when :COMOPEN
-              s.compiled << "\n=end\n"
-            else
-              s.compiled << ';'
-            end
-            s.last_open = nil
-          when @ss.scan(ESCCLOSE)
-            s.compiled << @ss[0]
-          when @ss.scan(CLOSE) && opened != 0
-            s.opened -= 1
-            s.compiled << @ss[0]
-          when @ss.scan(ESCOPEN)
-            s.opened += 1
-            s.compiled << @ss[0]
-          when @ss.scan(OPEN)
-            s.opened += 1
-            s.compiled << @ss[0]
-          when @ss.scan(TEXT)
-            s.compiled << @ss[0]
-          else
-            raise CompileError, "unknown tokens '#{peek(40)}'"
-          end
-        else
-          raise CompileError, "unknown state '#{s.mode}'!"
-        end
+        mode.scan(ss, s)
       end
       s.text2compiled
     end
