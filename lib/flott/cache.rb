@@ -22,7 +22,7 @@ module Flott
       # time has passed nil is returned), even if the file has changed.
       def changed?
         return true if @cache.reload_time and @cache.reload_time < 0
-        if @cache.reload_time and Time.now - @mtime < @cache.reload_time
+        if @cache.reload_time and Time.now - @template.mtime < @cache.reload_time
           return
         end
         @template.mtime != @mtime
