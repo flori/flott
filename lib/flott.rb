@@ -255,8 +255,9 @@ p m
       else
         @workdir = File.expand_path(Dir.pwd)
       end
-      @ruby = RubyMode.new
-      @text = TextMode.new
+      @ruby = RubyMode.new(self)
+      @text = TextMode.new(self)
+      @current_mode = @text
       @ss = StringScanner.new(source)
     end
 
@@ -266,6 +267,14 @@ p m
       workdir   = File.dirname(File.expand_path(filename))
       source    = File.read(filename)
       new(source, workdir)
+    end
+
+    def goto_text_mode
+      @current_mode = @text
+    end
+
+    def goto_ruby_mode
+      @current_mode = @ruby
     end
 
     # Compiles the template source and returns a Proc object to be executed
@@ -288,7 +297,7 @@ p @filename
     end
    
     # Include the template _filename_ at the current place 
-    def include_template(s, filename)
+    def include_template(s, filename) # :nodoc:
       filename.untaint
       if filename[0] == ?/ 
         filename = File.join(rootdir, filename[1, filename.size])
@@ -307,7 +316,6 @@ p @filename
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
     end
-    private :include_template
 
     attr_accessor :parent
 
@@ -315,48 +323,58 @@ p @filename
       @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
-    class TextMode
-      def scan(ss, s)
+    class Mode
+      def initialize(parser)
+        @parser = parser
+      end
+
+      def ss
+        @parser.instance_variable_get(:@ss)
+      end
+    end
+
+    class TextMode < Mode
+      def scan(s)
         case
-        when @ss.scan(ESCOPEN)
+        when ss.scan(ESCOPEN)
           s.text << '['
-        when @ss.scan(INCOPEN)
+        when ss.scan(INCOPEN)
           s.last_open = :INCOPEN
-          include_template(s, @ss[1])
-        when @ss.scan(PRIOPEN)
+          @parser.include_template(s, ss[1])
+        when ss.scan(PRIOPEN)
           s.last_open = :PRIOPEN
-          s.mode      = :ruby
+          @parser.goto_ruby_mode
           s.text2compiled
           s.compiled << 'print Flott::Parser::escape(begin '
-        when @ss.scan(RAWOPEN)
+        when ss.scan(RAWOPEN)
           s.last_open = :RAWOPEN
-          s.mode      = :ruby
+          @parser.goto_ruby_mode
           s.text2compiled
           s.compiled << 'print(begin '
-        when @ss.scan(COMOPEN)
+        when ss.scan(COMOPEN)
           s.last_open = :COMOPEN
-          s.mode      = :ruby
+          @parser.goto_ruby_mode
           s.text2compiled
           s.compiled << "\n=begin\n"
-        when @ss.scan(OPEN)
+        when ss.scan(OPEN)
           s.last_open = :OPEN
-          s.mode      = :ruby
+          @parser.goto_ruby_mode
           s.text2compiled
-        when @ss.scan(CLOSE)
-          s.text << @ss[0]
-        when @ss.scan(TEXT)
-          s.text << @ss[0].gsub(/'/, %{\\\\'}) if @ss[0]
+        when ss.scan(CLOSE)
+          s.text << ss[0]
+        when ss.scan(TEXT)
+          s.text << ss[0].gsub(/'/, %{\\\\'}) if ss[0]
         else
           raise CompileError, "unknown tokens '#{peek(40)}'"
         end
       end
     end
 
-    class RubyMode
-      def scan(ss, s)
+    class RubyMode < Mode
+      def scan(s)
         case
-        when @ss.scan(CLOSE) && s.opened == 0
-          s.mode = :text
+        when ss.scan(CLOSE) && s.opened == 0
+          @parser.goto_text_mode
           case s.last_open
           when :PRIOPEN
             s.compiled << ' end);'
@@ -368,19 +386,19 @@ p @filename
             s.compiled << ';'
           end
           s.last_open = nil
-        when @ss.scan(ESCCLOSE)
-          s.compiled << @ss[0]
-        when @ss.scan(CLOSE) && opened != 0
+        when ss.scan(ESCCLOSE)
+          s.compiled << ss[0]
+        when ss.scan(CLOSE) && opened != 0
           s.opened -= 1
-          s.compiled << @ss[0]
-        when @ss.scan(ESCOPEN)
+          s.compiled << ss[0]
+        when ss.scan(ESCOPEN)
           s.opened += 1
-          s.compiled << @ss[0]
-        when @ss.scan(OPEN)
+          s.compiled << ss[0]
+        when ss.scan(OPEN)
           s.opened += 1
-          s.compiled << @ss[0]
-        when @ss.scan(TEXT)
-          s.compiled << @ss[0]
+          s.compiled << ss[0]
+        when ss.scan(TEXT)
+          s.compiled << ss[0]
         else
           raise CompileError, "unknown tokens '#{peek(40)}'"
         end
@@ -389,7 +407,7 @@ p @filename
 
     def compile_inner(s)  # :nodoc:
       until @ss.eos?
-        mode.scan(ss, s)
+        @current_mode.scan(s)
       end
       s.text2compiled
     end
