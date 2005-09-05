@@ -187,6 +187,36 @@ module Flott
     delegate :putc, :@output
   end
 
+  class ParserState < Struct.new(:mode, :opened, :last_open, :text,
+      :compiled, :pathes)
+    # Transform text mode parts to compiled code parts.
+    def text2compiled
+      return if text.empty?
+      compiled << %{print '}
+      compiled.concat(text)
+      compiled << %{';}
+      text.clear
+    end
+
+    # Return the whole compiled code as a string.
+    def compiled_string
+      compiled.join.untaint
+    end
+  end
+
+  class Template < Proc
+    def initialize
+      super
+      @pathes = []
+    end
+
+    attr_accessor :pathes
+
+    def mtime
+      @pathes.map { |path| File.stat(path).mtime }.max
+    end
+  end
+
   class Parser < StringScanner
     # This class method escapes _string_ in place,
     # by substituting &<>" with their respective html entities.
@@ -228,28 +258,10 @@ module Flott
 
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
-      dirname = File.dirname(filename)
-      workdir = File.expand_path(dirname)
-      new(File.read(filename), workdir)
-    end
-
-    class ParserState < Struct.new(:mode, :opened, :last_open, :text, :compiled)
-      # Transform text mode parts to compiled code parts.
-      def text2compiled
-        return if text.empty?
-        compiled << %{print '}
-        compiled.concat(text)
-        compiled << %{';}
-        text.clear
-      end
-
-      # Return the whole compiled code as a string.
-      def compiled_string
-        compiled.join.untaint
-      end
-    end
-
-    class Template < Proc
+      @filename = filename
+      workdir   = File.dirname(File.expand_path(filename))
+      source    = File.read(filename)
+      new(source, workdir)
     end
 
     # Compiles the template source and returns a Proc object to be executed
@@ -257,11 +269,14 @@ module Flott
     # _Parser#wellformed?_.
     def compile
       s = ParserState.new(:text, 0, nil, [],
-        [ "Template.new { |env| env.instance_eval %q{\n" ])
+        [ "Template.new { |env| env.instance_eval %q{\n" ],
+        @filename ? [ @filename ] : [])
       compile_inner(s)
       s.compiled << "\n}\n}"
       begin
-        eval(s.compiled_string, nil, '(flott)')
+        template = eval(s.compiled_string, nil, '(flott)')
+        template.pathes = s.pathes
+        template
       rescue SyntaxError => e
         raise EvalError.wrap(e)
       end
@@ -277,6 +292,7 @@ module Flott
       end
       if File.readable?(filename)
         s.text2compiled
+        s.pathes << filename
         source  = File.read(filename)
         workdir = File.dirname(filename) # TODO remember all the file pathes
         parser  = self.class.new(source, workdir)
