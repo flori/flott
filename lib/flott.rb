@@ -220,22 +220,6 @@ p m
   end
 
   class Parser
-    # This class method escapes _string_ in place,
-    # by substituting &<>" with their respective html entities.
-    def self.escape(string)
-      string = string.to_s
-      string.gsub!(/[&<>"]/) do |c|
-        case c
-        when '&' then '&amp;'
-        when '<' then '&lt;' 
-        when '>' then '&gt;'
-        when '"' then '&quot;'
-        else raise "unknown character '#{c}'"
-        end
-      end
-      string
-    end
-
     ESCOPEN   =   /\\\[/
     INCOPEN   =   /\[<\s*([^\]]+)\s*\]/
     PRIOPEN   =   /\[=\s*/
@@ -261,18 +245,24 @@ p m
       @scanner = StringScanner.new(source)
     end
 
-    attr_reader :scanner
-
-    def state
-      @state ||= parent.state
-    end
-
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
       @filename = filename
       workdir   = File.dirname(File.expand_path(filename))
       source    = File.read(filename)
       new(source, workdir)
+    end
+
+    attr_reader :scanner
+
+    def state
+      @state ||= parent.state
+    end
+
+    attr_accessor :parent
+
+    def rootdir
+      @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
     def goto_text_mode
@@ -301,27 +291,7 @@ p @filename
         raise EvalError.wrap(e)
       end
     end
-   
-    attr_accessor :parent
 
-    def rootdir
-      @rootdir ||= parent ? parent.rootdir : @workdir
-    end
-
-    class Mode
-      def initialize(parser)
-        @parser = parser
-      end
-
-      def scanner
-        @parser.scanner
-      end
-
-      def state
-        @parser.state
-      end
-    end
- 
     def interpret_filename(filename)
       filename.untaint
       if filename[0] == ?/ 
@@ -337,7 +307,21 @@ p @filename
       parser.parent = self
       parser.compile_inner
     end
+   
+    class Mode
+      def initialize(parser)
+        @parser = parser
+      end
 
+      def scanner
+        @parser.scanner
+      end
+
+      def state
+        @parser.state
+      end
+    end
+ 
     class TextMode < Mode
       # Include the template _filename_ at the current place 
       def include_template(filename)
@@ -461,6 +445,22 @@ p @filename
       compile
     rescue
       false
+    end
+
+    # This class method escapes _string_ in place,
+    # by substituting &<>" with their respective html entities.
+    def self.escape(string)
+      string = string.to_s
+      string.gsub!(/[&<>"]/) do |c|
+        case c
+        when '&' then '&amp;'
+        when '<' then '&lt;' 
+        when '>' then '&gt;'
+        when '"' then '&quot;'
+        else raise "unknown character '#{c}'"
+        end
+      end
+      string
     end
   end
 
