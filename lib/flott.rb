@@ -95,7 +95,7 @@ module Flott
   # calling the evaluated Proc object.
   class CallError < ParserError; end
 
-  module Delegator
+  module Delegate
     # A method to easily delegate methods to an object, stored in an
     # instance variable, or to an object return by a reader attribute. It's
     # used like this:
@@ -128,7 +128,7 @@ module Flott
   # This class can instantiate environment objects to evaluate Flott Templates
   # in.
   class Environment
-    extend Delegator
+    extend Delegate
 
     # Creates an Environment object, that outputs to _output_. The default
     # ouput stream is STDOUT.
