@@ -9,23 +9,23 @@ module Flott
     end
   end
 
+  # The base Exception for Parser errors.
+  class ParserError < FlottException; end
+
+  # This exception is raised if errors happen in the compilation phase of a
+  # template.
+  class CompileError < ParserError; end
+
+  # This exception is raised if a syntax error occurs during the
+  # evaluation of the compiled Ruby code.
+  class EvalError < ParserError; end
+
+  # This exception is raised if a syntax error occurs while
+  # calling the evaluated Proc object.
+  class CallError < ParserError; end
+
   class Parser < StringScanner
-    # The base Exception for Parser errors.
-    class ParserError < FlottException; end
-
-    # This exception is raised if errors happen in the compilation phase of a
-    # template.
-    class CompileError < ParserError; end
-
-    # This exception is raised if a syntax error occurs during the
-    # evaluation of the compiled Ruby code.
-    class EvalError < ParserError; end
-
-    # This exception is raised if a syntax error occurs while
-    # calling the evaluated Proc object.
-    class CallError < ParserError; end
-
-    # This class method escapes <code>string</code> in place,
+    # This class method escapes _string_ in place,
     # by substituting &<>" with their respective html entities.
     def self.escape(string)
       string = string.to_s
@@ -52,7 +52,7 @@ module Flott
     TEXT      =   /[^\\\]\[]+/
     ESC       =   /\\/
 
-    # Creates a Parser object. <code>workdir</code> is the directory, on which
+    # Creates a Parser object. _workdir_ is the directory, on which
     # [<file] inclusions are based.
     def initialize(source, workdir = nil)
       if workdir
@@ -61,6 +61,13 @@ module Flott
         @workdir = File.expand_path(Dir.pwd)
       end
       super(source)
+    end
+
+    # Creates a Parser object from _filename_
+    def self.from_filename(filename)
+      dirname = File.dirname(filename)
+      workdir = File.expand_path(dirname)
+      new(File.read(filename), workdir)
     end
 
     class ParserState < Struct.new(:mode, :opened, :last_open, :text, :compiled)
@@ -81,7 +88,7 @@ module Flott
 
     # Compiles the template source and returns a Proc object to be executed
     # later. This method raises a ParserError exception if source is not
-    # <code>Parser#wellformed?</code>.
+    # _Parser#wellformed?_.
     def compile
       s = ParserState.new(:text, 0, nil, [],
         [ "lambda { |env| env.instance_eval %q{\n" ])
@@ -217,7 +224,7 @@ end
 
 if $0 == __FILE__
   parser = if filename = ARGV.shift
-    Flott::Parser.new(File.read(filename), File.dirname(filename))
+    Flott::Parser.from_filename(filename)
   else
     Flott::Parser.new(STDIN.read)
   end

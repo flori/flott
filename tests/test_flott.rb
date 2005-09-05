@@ -37,6 +37,7 @@ class TC_Flott < Test::Unit::TestCase
 __EOT
     workdir = File.join(File.dirname(__FILE__), 'templates')
     @parser = Parser.new(File.read(File.join(workdir, 'template')), workdir)
+    @parser2 = Parser.from_filename(File.join(workdir, 'template'))
   end
 
   def test_foo
