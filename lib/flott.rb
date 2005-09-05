@@ -29,7 +29,7 @@ module Flott
 # 
 # The parser can be used like this
 #  fp = Flott::Parser.from_filename('template')
-#  env = Object.new
+#  env = Flott::Environment.new
 #  env.instance_variable_set :@name, "Florian"
 #  puts fp.evaluate(env)
 #
@@ -95,6 +95,98 @@ module Flott
   # calling the evaluated Proc object.
   class CallError < ParserError; end
 
+  module Delegator
+    # A method to easily delegate methods to an object, stored in an
+    # instance variable, or to an object return by a reader attribute. It's
+    # used like this:
+    #   class A
+    #     delegate :method_here1, :@obj
+    #     delegate :method_here2, :@obj, :method_there2
+    #     delegate :method_here3, :reader, :method_there3
+    #   end
+    def delegate(method_name, obj, other_method_name = method_name)
+      raise ArgumentError, "obj wasn't defined" unless obj
+      obj = obj.to_s
+      if obj[0] == ?@
+        class_eval <<-EOS
+          def #{method_name}(*args, &block)
+            instance_variable_get('#{obj}').__send__(
+              '#{other_method_name}', *args, &block)
+          end
+        EOS
+      else
+        class_eval <<-EOS
+          def #{method_name}(*args, &block)
+            __send__('#{obj}').__send__(
+              '#{other_method_name}', *args, &block)
+          end
+        EOS
+      end
+    end
+  end
+
+  # This class can instantiate environment objects to evaluate Flott Templates
+  # in.
+  class Environment
+    extend Delegator
+
+    # Creates an Environment object, that outputs to _output_. The default
+    # ouput stream is STDOUT.
+    def initialize(output = STDOUT)
+      @output = output
+    end
+
+    # Updates the instance variables of this environment with values from
+    # _hash_.
+    def update(hash)
+      hash.each { |name, value| self[name] = value }
+    end
+
+    # Returns the instance variable _@name_.
+    def [](name)
+      name = name.to_s
+      name = "@#{name}" unless name[0] == ?@
+      instance_variable_get name
+    end
+
+    # Sets the instance variable _@name_ to _value_.
+    def []=(name, value)
+      name = name.to_s
+      name = "@#{name}" unless name[0] == ?@
+      instance_variable_set name, value
+    end
+
+    # Creates a function (actually, a singleton method) _id_ from the block
+    # _block_ on this object.
+    def function(id, &block)
+      sc = class << self; self; end
+      sc.instance_eval { define_method(id, &block) }
+    end
+
+    alias fun function
+
+    # Kernel#p redirected to @output.
+    def p(*objects)
+      objects.each { |o| @output.puts(o.inspect) }
+      nil
+    end
+
+    # Kernel#pp redirected to @output.
+    def pp(objects, out_ignore=nil, width = 79)
+      require 'pp'
+      objects.each { |obj| PP.pp(obj, @output) }
+      nil
+    end
+
+    delegate :puts, :@output
+
+    delegate :printf, :@output
+
+    delegate :print, :@output
+
+    delegate :putc, :@output
+  end
+
   class Parser < StringScanner
     # This class method escapes _string_ in place,
     # by substituting &<>" with their respective html entities.
@@ -157,12 +249,15 @@ module Flott
       end
     end
 
+    class Template < Proc
+    end
+
     # Compiles the template source and returns a Proc object to be executed
     # later. This method raises a ParserError exception if source is not
     # _Parser#wellformed?_.
     def compile
       s = ParserState.new(:text, 0, nil, [],
-        [ "lambda { |env| env.instance_eval %q{\n" ])
+        [ "Template.new { |env| env.instance_eval %q{\n" ])
       compile_inner(s)
       s.compiled << "\n}\n}"
       begin
@@ -175,18 +270,28 @@ module Flott
     # Include the template _filename_ at the current place 
     def include_template(s, filename)
       filename.untaint
-      if @workdir
+      if filename[0] == ?/ 
+        filename = File.join(rootdir, filename[1, filename.size])
+      elsif @workdir
         filename = File.join(@workdir, filename)
       end
       if File.readable?(filename)
         s.text2compiled
         source  = File.read(filename)
-        workdir = File.dirname(filename)
+        workdir = File.dirname(filename) # TODO remember all the file pathes
         parser  = self.class.new(source, workdir)
+        parser.parent = self
         parser.compile_inner(s)
       else
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
+    end
+    private :include_template
+
+    attr_accessor :parent
+
+    def rootdir
+      @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
     def compile_inner(s)  # :nodoc:
@@ -265,7 +370,7 @@ module Flott
 
     # First compiles the source template and evaluates it in the environment
     # env. If no environment is given, a newly created environment is used.
-    def evaluate(env = Object.new, &block)
+    def evaluate(env = Environment.new, &block)
       env.instance_eval(&block) if block
       compile.call(env)
       self
@@ -275,7 +380,7 @@ module Flott
 
     # The already compiled ruby code is evaluated in the environment env.
     # If no environment is given, a newly created environment is used.
-    def self.evaluate(compiled, env = Object.new, &block)
+    def self.evaluate(compiled, env = Environment.new, &block)
       env.instance_eval(&block) if block
       compiled.call(env)
       self

@@ -37,35 +37,40 @@ class TC_Flott < Test::Unit::TestCase
 __EOT
     workdir = File.join(File.dirname(__FILE__), 'templates')
     @parser = Parser.new(File.read(File.join(workdir, 'template')), workdir)
-    @parser2 = Parser.from_filename(File.join(workdir, 'template'))
+    @parser2 = Parser.from_filename(File.join(workdir, 'template2'))
   end
 
   def test_foo
     assert_kind_of Parser, @parser
+    assert_kind_of Parser, @parser2
   end
 
   def test_compile
     assert @parser.compile
     assert @parser.wellformed?
+    assert @parser2.compile
+    assert @parser2.wellformed?
   end
 
   def test_execute
-    env = Object.new
-    env.instance_variable_set :@name, 'Florian'
-    output = ''
-    $stdout = StringIO.new(output)
+    env = Environment.new(StringIO.new(output = ''))
+    env[:name] = 'Florian'
     @parser.evaluate(env) 
     assert_equal(@expected, output)
   end
 
-  def test_compile
-    env = Object.new
-    env.instance_variable_set :@name, 'Florian'
-    output = ''
-    $stdout = StringIO.new(output)
+  def test_compile_evaluate
+    env = Environment.new(StringIO.new(output = ''))
+    env[:@name] = 'Florian'
     compiled = @parser.compile
     Parser.evaluate(compiled, env)
     assert_equal(@expected, output)
+  end
+
+  def test_execute2
+    env = Environment.new(StringIO.new(output = ''))
+    @parser2.evaluate(env)
+    assert_match /Toplevel/, output
   end
 
   def test_error
