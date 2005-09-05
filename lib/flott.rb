@@ -258,10 +258,10 @@ p m
       @ruby = RubyMode.new(self)
       @text = TextMode.new(self)
       @current_mode = @text
-      @ss = StringScanner.new(source)
+      @scanner = StringScanner.new(source)
     end
 
-    attr_reader :ss
+    attr_reader :scanner
 
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
@@ -331,42 +331,42 @@ p @filename
         @parser = parser
       end
 
-      def ss
-        @parser.ss
+      def scanner
+        @parser.scanner
       end
     end
 
     class TextMode < Mode
       def scan(s)
         case
-        when ss.scan(ESCOPEN)
+        when scanner.scan(ESCOPEN)
           s.text << '['
-        when ss.scan(INCOPEN)
+        when scanner.scan(INCOPEN)
           s.last_open = :INCOPEN
-          @parser.instance_eval { include_template(s, ss[1]) }
-        when ss.scan(PRIOPEN)
+          @parser.instance_eval { include_template(s, scanner[1]) }
+        when scanner.scan(PRIOPEN)
           s.last_open = :PRIOPEN
           @parser.goto_ruby_mode
           s.text2compiled
           s.compiled << 'print Flott::Parser::escape(begin '
-        when ss.scan(RAWOPEN)
+        when scanner.scan(RAWOPEN)
           s.last_open = :RAWOPEN
           @parser.goto_ruby_mode
           s.text2compiled
           s.compiled << 'print(begin '
-        when ss.scan(COMOPEN)
+        when scanner.scan(COMOPEN)
           s.last_open = :COMOPEN
           @parser.goto_ruby_mode
           s.text2compiled
           s.compiled << "\n=begin\n"
-        when ss.scan(OPEN)
+        when scanner.scan(OPEN)
           s.last_open = :OPEN
           @parser.goto_ruby_mode
           s.text2compiled
-        when ss.scan(CLOSE)
-          s.text << ss[0]
-        when ss.scan(TEXT)
-          s.text << ss[0].gsub(/'/, %{\\\\'}) if ss[0]
+        when scanner.scan(CLOSE)
+          s.text << scanner[0]
+        when scanner.scan(TEXT)
+          s.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
         else
           raise CompileError, "unknown tokens '#{peek(40)}'"
         end
@@ -376,7 +376,7 @@ p @filename
     class RubyMode < Mode
       def scan(s)
         case
-        when ss.scan(CLOSE) && s.opened == 0
+        when scanner.scan(CLOSE) && s.opened == 0
           @parser.goto_text_mode
           case s.last_open
           when :PRIOPEN
@@ -389,19 +389,19 @@ p @filename
             s.compiled << ';'
           end
           s.last_open = nil
-        when ss.scan(ESCCLOSE)
-          s.compiled << ss[0]
-        when ss.scan(CLOSE) && opened != 0
+        when scanner.scan(ESCCLOSE)
+          s.compiled << scanner[0]
+        when scanner.scan(CLOSE) && opened != 0
           s.opened -= 1
-          s.compiled << ss[0]
-        when ss.scan(ESCOPEN)
+          s.compiled << scanner[0]
+        when scanner.scan(ESCOPEN)
           s.opened += 1
-          s.compiled << ss[0]
-        when ss.scan(OPEN)
+          s.compiled << scanner[0]
+        when scanner.scan(OPEN)
           s.opened += 1
-          s.compiled << ss[0]
-        when ss.scan(TEXT)
-          s.compiled << ss[0]
+          s.compiled << scanner[0]
+        when scanner.scan(TEXT)
+          s.compiled << scanner[0]
         else
           raise CompileError, "unknown tokens '#{peek(40)}'"
         end
@@ -409,7 +409,7 @@ p @filename
     end
 
     def compile_inner(s)  # :nodoc:
-      until @ss.eos?
+      until scanner.eos?
         @current_mode.scan(s)
       end
       s.text2compiled
