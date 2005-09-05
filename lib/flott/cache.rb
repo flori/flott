@@ -76,7 +76,7 @@ p [ @template.pathes, @template.mtime, @mtime ]
       page = @pages[name]
       if page
         if page.changed?
-          page.compile(@rootdir)
+          page.compile
         end
       else
         page = Page.new(self, File.join(@rootdir, name))

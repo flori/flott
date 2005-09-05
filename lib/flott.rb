@@ -247,10 +247,12 @@ p m
 
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
-      @filename = filename
-      workdir   = File.dirname(File.expand_path(filename))
+      filename  = File.expand_path(filename)
+      workdir   = File.dirname(filename)
       source    = File.read(filename)
-      new(source, workdir)
+      obj = new(source, workdir)
+      obj.instance_variable_set :@filename, filename
+      obj
     end
 
     attr_reader :scanner
@@ -280,7 +282,6 @@ p m
       @state = ParserState.new(0, nil, [],
         [ "Template.new { |env| env.instance_eval %q{\n" ],
         @filename ? [ @filename ] : [])
-p @filename
       compile_inner
       state.compiled << "\n}\n}"
       begin
