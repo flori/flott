@@ -261,6 +261,8 @@ p m
       @ss = StringScanner.new(source)
     end
 
+    attr_reader :ss
+
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
       @filename = filename
@@ -297,7 +299,7 @@ p @filename
     end
    
     # Include the template _filename_ at the current place 
-    def include_template(s, filename) # :nodoc:
+    def include_template(s, filename)
       filename.untaint
       if filename[0] == ?/ 
         filename = File.join(rootdir, filename[1, filename.size])
@@ -316,6 +318,7 @@ p @filename
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
     end
+    private :include_template
 
     attr_accessor :parent
 
@@ -329,7 +332,7 @@ p @filename
       end
 
       def ss
-        @parser.instance_variable_get(:@ss)
+        @parser.ss
       end
     end
 
@@ -340,7 +343,7 @@ p @filename
           s.text << '['
         when ss.scan(INCOPEN)
           s.last_open = :INCOPEN
-          @parser.include_template(s, ss[1])
+          @parser.instance_eval { include_template(s, ss[1]) }
         when ss.scan(PRIOPEN)
           s.last_open = :PRIOPEN
           @parser.goto_ruby_mode
