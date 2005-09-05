@@ -1,13 +1,14 @@
 module Flott
-  class PageCache
+  class Cache
     # A Page object that encapsulates a compiled template.
     class Page
       # Creates a Page object for the template that can be found at
       # path <code>path</code>.
-      def initialize(path, cache)
-        @path   = path
+      def initialize(cache, path)
         @cache  = cache
+        @path   = path
         @mtime  = File.stat(path).mtime
+        compile
       end
 
       # Returns the compiled template or nil if the template
@@ -42,12 +43,12 @@ module Flott
 
     end
 
-    # Create a PageCache that compiles and caches the template files under
-    # <code>pages_path</code>. If <code>reload_time</code> in seconds is given, the
-    # template files are only reloaded after <code>reload_time</code> seconds
-    # even if changed. Negative <code>reload_time</code> means, reload the
-    # file always, even if unchanged. (This is good for development, think of changed
-    # included templates.)
+    # Creates a Cache that compiles and caches the template files under
+    # <code>pages_path</code>. If <code>reload_time</code> in seconds is given,
+    # the template files are only reloaded after <code>reload_time</code>
+    # seconds even if changed. Negative <code>reload_time</code> means, reload
+    # the file always, even if unchanged. (This is good for development, think
+    # of changed included templates.)
     def initialize(pages_path, reload_time = nil)
       @pages_path  = pages_path
       @workdir = File.dirname(@pages_path)
@@ -55,10 +56,10 @@ module Flott
       @pages = {}
     end
 
-    # Reload time in seconds for the template files of this PageCache.
+    # Reload time in seconds for the template files of this Cache.
     attr_reader :reload_time
 
-    # Returns all page names that can be cached by this PageCache. These are
+    # Returns all page names that can be cached by this Cache. These are
     # the template files under <code>pages_path</code>.
     def pages
       require 'find'
@@ -80,7 +81,7 @@ module Flott
       if page
         page.changed? and page.compile(@workdir)
       else
-        page = Page.new(File.join(@pages_path, name), self)
+        page = Page.new(self, File.join(@pages_path, name))
         page.compile(@workdir)
         put(name, page)
       end
@@ -93,7 +94,7 @@ module Flott
     rescue Errno::ENOENT, Errno::EISDIR
     end
 
-    def evaluate(name, env = Object.new)
+    def evaluate(name, env = Environment.new)
       get(name) { |template| Flott::Parser.evaluate(template, env) } or return
       self
     end

@@ -10,11 +10,13 @@ begin
 rescue LoadError
 end
 require 'test_flott'
+require 'test_cache'
 
 class TS_AllTests
   def self.suite
     suite = Test::Unit::TestSuite.new
     suite << TC_Flott.suite
+    suite << TC_Cache.suite
   end
 end
 Test::Unit::UI::Console::TestRunner.run(TS_AllTests)

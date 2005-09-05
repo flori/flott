@@ -40,7 +40,7 @@ __EOT
     @parser2 = Parser.from_filename(File.join(workdir, 'template2'))
   end
 
-  def test_foo
+  def test_kind
     assert_kind_of Parser, @parser
     assert_kind_of Parser, @parser2
   end

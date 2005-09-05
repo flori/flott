@@ -398,6 +398,8 @@ module Flott
       false
     end
   end
+
+  autoload :Cache, 'flott/cache'
 end
 
 if $0 == __FILE__
