@@ -25,6 +25,7 @@ module Flott
         if @cache.reload_time and Time.now - @mtime < @cache.reload_time
           return
         end
+p [ @template.pathes, @template.mtime, @mtime ]
         @template.mtime != @mtime
       end
 
@@ -74,7 +75,9 @@ module Flott
     def get(name)
       page = @pages[name]
       if page
-        page.changed? and page.compile(@rootdir)
+        if page.changed?
+          page.compile(@rootdir)
+        end
       else
         page = Page.new(self, File.join(@rootdir, name))
         page.compile

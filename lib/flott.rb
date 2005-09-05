@@ -213,7 +213,9 @@ module Flott
     attr_accessor :pathes
 
     def mtime
-      @pathes.map { |path| File.stat(path).mtime }.max
+      m = @pathes.map { |path| File.stat(path).mtime }.max
+p m
+      m
     end
   end
 
@@ -271,6 +273,7 @@ module Flott
       s = ParserState.new(:text, 0, nil, [],
         [ "Template.new { |env| env.instance_eval %q{\n" ],
         @filename ? [ @filename ] : [])
+p @filename
       compile_inner(s)
       s.compiled << "\n}\n}"
       begin

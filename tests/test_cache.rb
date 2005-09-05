@@ -3,12 +3,14 @@
 require 'test/unit'
 require 'flott'
 require 'stringio'
+require 'fileutils'
 
 class TC_Cache < Test::Unit::TestCase
+  include FileUtils
   include Flott
 
   def setup
-    @cache = Cache.new('tests/templates', 5)
+    @cache = Cache.new('tests/templates')
   end
 
   def test_kind
@@ -19,6 +21,10 @@ class TC_Cache < Test::Unit::TestCase
     template = @cache.get('template')
     assert_kind_of Template, template
     assert_equal template, @cache.get('template')
+    p File.stat('tests/templates/template').mtime
+    touch 'tests/templates/template'
+    p File.stat('tests/templates/template').mtime
+    assert template != @cache.get('template')
     template2 = @cache.get('template2')
     assert_kind_of Template, template2
     assert_equal template2, @cache.get('template2')
