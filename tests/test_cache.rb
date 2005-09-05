@@ -21,9 +21,7 @@ class TC_Cache < Test::Unit::TestCase
     template = @cache.get('template')
     assert_kind_of Template, template
     assert_equal template, @cache.get('template')
-    p File.stat('tests/templates/template').mtime
     touch 'tests/templates/template'
-    p File.stat('tests/templates/template').mtime
     assert template != @cache.get('template')
     template2 = @cache.get('template2')
     assert_kind_of Template, template2
