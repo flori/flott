@@ -187,7 +187,7 @@ module Flott
     delegate :putc, :@output
   end
 
-  class ParserState < Struct.new(:mode, :opened, :last_open, :text,
+  class ParserState < Struct.new(:opened, :last_open, :text,
       :compiled, :pathes)
     # Transform text mode parts to compiled code parts.
     def text2compiled
@@ -283,7 +283,7 @@ p m
     # later. This method raises a ParserError exception if source is not
     # _Parser#wellformed?_.
     def compile
-      s = ParserState.new(:text, 0, nil, [],
+      s = ParserState.new(0, nil, [],
         [ "Template.new { |env| env.instance_eval %q{\n" ],
         @filename ? [ @filename ] : [])
 p @filename
@@ -298,28 +298,6 @@ p @filename
       end
     end
    
-    # Include the template _filename_ at the current place 
-    def include_template(s, filename)
-      filename.untaint
-      if filename[0] == ?/ 
-        filename = File.join(rootdir, filename[1, filename.size])
-      elsif @workdir
-        filename = File.join(@workdir, filename)
-      end
-      if File.readable?(filename)
-        s.text2compiled
-        s.pathes << filename
-        source  = File.read(filename)
-        workdir = File.dirname(filename) # TODO remember all the file pathes
-        parser  = self.class.new(source, workdir)
-        parser.parent = self
-        parser.compile_inner(s)
-      else
-        raise CompileError, "Cannot open #{filename} for inclusion!"
-      end
-    end
-    private :include_template
-
     attr_accessor :parent
 
     def rootdir
@@ -335,15 +313,46 @@ p @filename
         @parser.scanner
       end
     end
+ 
+    def interpret_filename(filename)
+      filename.untaint
+      if filename[0] == ?/ 
+        filename = File.join(rootdir, filename[1, filename.size])
+      elsif @workdir
+        filename = File.join(@workdir, filename)
+      end
+      filename
+    end
+
+    def fork(source, workdir, s)
+      parser        = self.class.new(source, workdir)
+      parser.parent = self
+      parser.compile_inner(s)
+    end
 
     class TextMode < Mode
+      # Include the template _filename_ at the current place 
+      def include_template(s, filename)
+        filename = @parser.interpret_filename(filename)
+        if File.readable?(filename)
+          s.text2compiled
+          s.pathes << filename
+          source  = File.read(filename)
+          workdir = File.dirname(filename) # TODO remember all the file pathes
+          @parser.fork(source, workdir, s)
+        else
+          raise CompileError, "Cannot open #{filename} for inclusion!"
+        end
+      end
+      private :include_template
+
       def scan(s)
         case
         when scanner.scan(ESCOPEN)
           s.text << '['
         when scanner.scan(INCOPEN)
           s.last_open = :INCOPEN
-          @parser.instance_eval { include_template(s, scanner[1]) }
+          include_template(s, scanner[1])
         when scanner.scan(PRIOPEN)
           s.last_open = :PRIOPEN
           @parser.goto_ruby_mode
