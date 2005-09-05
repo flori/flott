@@ -263,7 +263,9 @@ p m
 
     attr_reader :scanner
 
-    attr_reader :state
+    def state
+      @state ||= parent.state
+    end
 
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
