@@ -219,7 +219,7 @@ p m
     end
   end
 
-  class Parser < StringScanner
+  class Parser
     # This class method escapes _string_ in place,
     # by substituting &<>" with their respective html entities.
     def self.escape(string)
@@ -255,7 +255,7 @@ p m
       else
         @workdir = File.expand_path(Dir.pwd)
       end
-      super(source)
+      @ss = StringScanner.new(source)
     end
 
     # Creates a Parser object from _filename_
@@ -314,43 +314,43 @@ p @filename
     end
 
     def compile_inner(s)  # :nodoc:
-      until eos?
+      until @ss.eos?
         if s.mode == :text 
           case
-          when scan(ESCOPEN)
+          when @ss.scan(ESCOPEN)
             s.text << '['
-          when scan(INCOPEN)
+          when @ss.scan(INCOPEN)
             s.last_open = :INCOPEN
-            include_template(s, self[1])
-          when scan(PRIOPEN)
+            include_template(s, @ss[1])
+          when @ss.scan(PRIOPEN)
             s.last_open = :PRIOPEN
             s.mode      = :ruby
             s.text2compiled
             s.compiled << 'print Flott::Parser::escape(begin '
-          when scan(RAWOPEN)
+          when @ss.scan(RAWOPEN)
             s.last_open = :RAWOPEN
             s.mode      = :ruby
             s.text2compiled
             s.compiled << 'print(begin '
-          when scan(COMOPEN)
+          when @ss.scan(COMOPEN)
             s.last_open = :COMOPEN
             s.mode      = :ruby
             s.text2compiled
             s.compiled << "\n=begin\n"
-          when scan(OPEN)
+          when @ss.scan(OPEN)
             s.last_open = :OPEN
             s.mode      = :ruby
             s.text2compiled
-          when scan(CLOSE)
-            s.text << self[0]
-          when scan(TEXT)
-            s.text << self[0].gsub(/'/, %{\\\\'}) if self[0]
+          when @ss.scan(CLOSE)
+            s.text << @ss[0]
+          when @ss.scan(TEXT)
+            s.text << @ss[0].gsub(/'/, %{\\\\'}) if @ss[0]
           else
             raise CompileError, "unknown tokens '#{peek(40)}'"
           end
         elsif s.mode == :ruby
           case
-          when scan(CLOSE) && s.opened == 0
+          when @ss.scan(CLOSE) && s.opened == 0
             s.mode = :text
             case s.last_open
             when :PRIOPEN
@@ -363,19 +363,19 @@ p @filename
               s.compiled << ';'
             end
             s.last_open = nil
-          when scan(ESCCLOSE)
-            s.compiled << self[0]
-          when scan(CLOSE) && opened != 0
+          when @ss.scan(ESCCLOSE)
+            s.compiled << @ss[0]
+          when @ss.scan(CLOSE) && opened != 0
             s.opened -= 1
-            s.compiled << self[0]
-          when scan(ESCOPEN)
+            s.compiled << @ss[0]
+          when @ss.scan(ESCOPEN)
             s.opened += 1
-            s.compiled << self[0]
-          when scan(OPEN)
+            s.compiled << @ss[0]
+          when @ss.scan(OPEN)
             s.opened += 1
-            s.compiled << self[0]
-          when scan(TEXT)
-            s.compiled << self[0]
+            s.compiled << @ss[0]
+          when @ss.scan(TEXT)
+            s.compiled << @ss[0]
           else
             raise CompileError, "unknown tokens '#{peek(40)}'"
           end
