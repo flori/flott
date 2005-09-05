@@ -214,7 +214,6 @@ module Flott
 
     def mtime
       m = @pathes.map { |path| File.stat(path).mtime }.max
-p m
       m
     end
   end

@@ -20,7 +20,6 @@ class TC_Cache < Test::Unit::TestCase
   def test_get
     template = @cache.get('template')
     assert_kind_of Template, template
-p template.pathes
     assert_equal template, @cache.get('template')
     p File.stat('tests/templates/template').mtime
     touch 'tests/templates/template'

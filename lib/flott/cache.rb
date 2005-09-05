@@ -25,7 +25,6 @@ module Flott
         if @cache.reload_time and Time.now - @mtime < @cache.reload_time
           return
         end
-p [ @template.pathes, @template.mtime, @mtime ]
         @template.mtime != @mtime
       end
 
