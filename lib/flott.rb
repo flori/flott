@@ -263,6 +263,8 @@ p m
 
     attr_reader :scanner
 
+    attr_reader :state
+
     # Creates a Parser object from _filename_
     def self.from_filename(filename)
       @filename = filename
@@ -283,15 +285,15 @@ p m
     # later. This method raises a ParserError exception if source is not
     # _Parser#wellformed?_.
     def compile
-      s = ParserState.new(0, nil, [],
+      @state = ParserState.new(0, nil, [],
         [ "Template.new { |env| env.instance_eval %q{\n" ],
         @filename ? [ @filename ] : [])
 p @filename
-      compile_inner(s)
-      s.compiled << "\n}\n}"
+      compile_inner
+      state.compiled << "\n}\n}"
       begin
-        template = eval(s.compiled_string, nil, '(flott)')
-        template.pathes = s.pathes
+        template = eval(state.compiled_string, nil, '(flott)')
+        template.pathes = state.pathes
         template
       rescue SyntaxError => e
         raise EvalError.wrap(e)
@@ -312,6 +314,10 @@ p @filename
       def scanner
         @parser.scanner
       end
+
+      def state
+        @parser.state
+      end
     end
  
     def interpret_filename(filename)
@@ -324,58 +330,58 @@ p @filename
       filename
     end
 
-    def fork(source, workdir, s)
+    def fork(source, workdir)
       parser        = self.class.new(source, workdir)
       parser.parent = self
-      parser.compile_inner(s)
+      parser.compile_inner
     end
 
     class TextMode < Mode
       # Include the template _filename_ at the current place 
-      def include_template(s, filename)
+      def include_template(filename)
         filename = @parser.interpret_filename(filename)
         if File.readable?(filename)
-          s.text2compiled
-          s.pathes << filename
+          state.text2compiled
+          state.pathes << filename
           source  = File.read(filename)
           workdir = File.dirname(filename) # TODO remember all the file pathes
-          @parser.fork(source, workdir, s)
+          @parser.fork(source, workdir)
         else
           raise CompileError, "Cannot open #{filename} for inclusion!"
         end
       end
       private :include_template
 
-      def scan(s)
+      def scan
         case
         when scanner.scan(ESCOPEN)
-          s.text << '['
+          state.text << '['
         when scanner.scan(INCOPEN)
-          s.last_open = :INCOPEN
-          include_template(s, scanner[1])
+          state.last_open = :INCOPEN
+          include_template( scanner[1])
         when scanner.scan(PRIOPEN)
-          s.last_open = :PRIOPEN
+          state.last_open = :PRIOPEN
           @parser.goto_ruby_mode
-          s.text2compiled
-          s.compiled << 'print Flott::Parser::escape(begin '
+          state.text2compiled
+          state.compiled << 'print Flott::Parser::escape(begin '
         when scanner.scan(RAWOPEN)
-          s.last_open = :RAWOPEN
+          state.last_open = :RAWOPEN
           @parser.goto_ruby_mode
-          s.text2compiled
-          s.compiled << 'print(begin '
+          state.text2compiled
+          state.compiled << 'print(begin '
         when scanner.scan(COMOPEN)
-          s.last_open = :COMOPEN
+          state.last_open = :COMOPEN
           @parser.goto_ruby_mode
-          s.text2compiled
-          s.compiled << "\n=begin\n"
+          state.text2compiled
+          state.compiled << "\n=begin\n"
         when scanner.scan(OPEN)
-          s.last_open = :OPEN
+          state.last_open = :OPEN
           @parser.goto_ruby_mode
-          s.text2compiled
+          state.text2compiled
         when scanner.scan(CLOSE)
-          s.text << scanner[0]
+          state.text << scanner[0]
         when scanner.scan(TEXT)
-          s.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
+          state.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
         else
           raise CompileError, "unknown tokens '#{peek(40)}'"
         end
@@ -383,45 +389,45 @@ p @filename
     end
 
     class RubyMode < Mode
-      def scan(s)
+      def scan
         case
-        when scanner.scan(CLOSE) && s.opened == 0
+        when scanner.scan(CLOSE) && state.opened == 0
           @parser.goto_text_mode
-          case s.last_open
+          case state.last_open
           when :PRIOPEN
-            s.compiled << ' end);'
+            state.compiled << ' end);'
           when :RAWOPEN
-            s.compiled << ' end.to_s);'
+            state.compiled << ' end.to_s);'
           when :COMOPEN
-            s.compiled << "\n=end\n"
+            state.compiled << "\n=end\n"
           else
-            s.compiled << ';'
+            state.compiled << ';'
           end
-          s.last_open = nil
+          state.last_open = nil
         when scanner.scan(ESCCLOSE)
-          s.compiled << scanner[0]
+          state.compiled << scanner[0]
         when scanner.scan(CLOSE) && opened != 0
-          s.opened -= 1
-          s.compiled << scanner[0]
+          state.opened -= 1
+          state.compiled << scanner[0]
         when scanner.scan(ESCOPEN)
-          s.opened += 1
-          s.compiled << scanner[0]
+          state.opened += 1
+          state.compiled << scanner[0]
         when scanner.scan(OPEN)
-          s.opened += 1
-          s.compiled << scanner[0]
+          state.opened += 1
+          state.compiled << scanner[0]
         when scanner.scan(TEXT)
-          s.compiled << scanner[0]
+          state.compiled << scanner[0]
         else
           raise CompileError, "unknown tokens '#{peek(40)}'"
         end
       end
     end
 
-    def compile_inner(s)  # :nodoc:
+    def compile_inner  # :nodoc:
       until scanner.eos?
-        @current_mode.scan(s)
+        @current_mode.scan
       end
-      s.text2compiled
+      state.text2compiled
     end
     protected :compile_inner
 
