@@ -6,7 +6,7 @@ require 'stringio'
 
 class TC_Flott < Test::Unit::TestCase
   include Flott
-  Flott.debug = !false
+  Flott.debug = false
 
   def setup
     @expected =<<__EOT
@@ -14,24 +14,24 @@ class TC_Flott < Test::Unit::TestCase
    "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
-  <title>Hello Florian!</title>
+  <title>Hello Flor&lt;ian!</title>
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
  </head>
  <body>
 
- <h1>Hello Florian[!</h1>
+ <h1>Hello Flor&lt;ian[!</h1>
  
-     <i>Hello Florian]!</i>
+     <i>Hello Flor<ian]!</i>
    
-     <b>Hello Florian]!</b>
+     <b>Hello Flor&lt;ian]!</b>
    
-     <i>Hello Florian]!</i>
+     <i>Hello Flor<ian]!</i>
    
-     <b>Hello Florian]!</b>
+     <b>Hello Flor&lt;ian]!</b>
    
-     <i>Hello Florian]!</i>
+     <i>Hello Flor<ian]!</i>
    
-     <b>Hello Florian]!</b>
+     <b>Hello Flor&lt;ian]!</b>
    
  
  </body> ]
@@ -65,14 +65,14 @@ __EOT
 
   def test_execute
     env = Environment.new(StringIO.new(output = ''))
-    env[:name] = 'Florian'
+    env[:name] = 'Flor<ian'
     @parser.evaluate(env) 
     assert_equal(@expected, output)
   end
 
   def test_compile_evaluate
     env = Environment.new(StringIO.new(output = ''))
-    env[:@name] = 'Florian'
+    env[:@name] = 'Flor<ian'
     compiled = @parser.compile
     Parser.evaluate(compiled, env)
     assert_equal(@expected, output)

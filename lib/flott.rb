@@ -464,8 +464,7 @@ module Flott
     # This class method escapes _string_ in place,
     # by substituting &<>" with their respective html entities.
     def self.escape(string)
-      string = string.to_s
-      string.gsub!(/[&<>"]/) do |c|
+      string.to_s.gsub(/[&<>"]/) do |c|
         case c
         when '&' then '&amp;'
         when '<' then '&lt;' 
@@ -474,7 +473,6 @@ module Flott
         else raise "unknown character '#{c}'"
         end
       end
-      string
     end
   end
 
