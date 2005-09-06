@@ -32,7 +32,8 @@ class TC_Flott < Test::Unit::TestCase
    
      <b>Hello Florian]!</b>
    
- </body>
+ 
+ </body> ]
 </html>
 __EOT
     workdir = File.join(File.dirname(__FILE__), 'templates')
@@ -47,8 +48,17 @@ __EOT
 
   def test_compile
     assert @parser.compile
+  end
+
+  def test_wellformed
     assert @parser.wellformed?
+  end
+
+  def test_compile2
     assert @parser2.compile
+  end
+
+  def test_wellformed2
     assert @parser2.wellformed?
   end
 
@@ -82,6 +92,9 @@ __EOT
     end
     assert_raises(EvalError) do
       Parser.new('lambda { |x| ').evaluate
+    end
+    assert_raises(CompileError) do
+      Parser.new('<bla>[<does_not_exist]</bla>').evaluate
     end
   end
 end

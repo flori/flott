@@ -7,5 +7,6 @@
      <i>Hello [!@name + "\]"]!</i>
    [end
  end]
- </body>
+ [a = [1, 2, 3]]
+ </body>[#Commented out] ]
 </html>

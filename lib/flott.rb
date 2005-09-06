@@ -286,6 +286,7 @@ module Flott
       begin
         template = eval(state.compiled_string, nil, '(flott)')
         template.pathes = state.pathes
+puts state.compiled_string
         template
       rescue SyntaxError => e
         raise EvalError.wrap(e)
@@ -377,7 +378,8 @@ module Flott
     class RubyMode < Mode
       def scan
         case
-        when scanner.scan(CLOSE) && state.opened == 0
+        when scanner.match?(CLOSE) && state.opened == 0
+          scanner.skip(CLOSE)
           @parser.goto_text_mode
           case state.last_open
           when :PRIOPEN
@@ -392,7 +394,7 @@ module Flott
           state.last_open = nil
         when scanner.scan(ESCCLOSE)
           state.compiled << scanner[0]
-        when scanner.scan(CLOSE) && opened != 0
+        when scanner.scan(CLOSE) && state.opened != 0
           state.opened -= 1
           state.compiled << scanner[0]
         when scanner.scan(ESCOPEN)
@@ -409,11 +411,18 @@ module Flott
       end
     end
 
+    def debug
+#      p([ @current_mode.class, state.last_open, state.opened, state.compiled_string, scanner.peek(20) ])
+    end
+
     def compile_inner  # :nodoc:
       until scanner.eos?
+        debug
         @current_mode.scan
       end
+debug
       state.text2compiled
+debug
     end
     protected :compile_inner
 
