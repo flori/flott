@@ -72,6 +72,10 @@ module Flott
 #  </html>
 
 
+  class << self
+    attr_accessor :debug
+  end
+
   class FlottException < StandardError
     def self.wrap(exception)
       wrapper = new(exception.message)
@@ -286,7 +290,6 @@ module Flott
       begin
         template = eval(state.compiled_string, nil, '(flott)')
         template.pathes = state.pathes
-puts state.compiled_string
         template
       rescue SyntaxError => e
         raise EvalError.wrap(e)
@@ -411,18 +414,21 @@ puts state.compiled_string
       end
     end
 
-    def debug
-#      p([ @current_mode.class, state.last_open, state.opened, state.compiled_string, scanner.peek(20) ])
+    def debug_output
+      if Flott.debug
+        p([ @current_mode.class, state.last_open, state.opened,
+          state.compiled_string, scanner.peek(20) ])
+      end
     end
 
     def compile_inner  # :nodoc:
       until scanner.eos?
-        debug
+        debug_output
         @current_mode.scan
       end
-debug
+      debug_output
       state.text2compiled
-debug
+      debug_output
     end
     protected :compile_inner
 

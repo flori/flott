@@ -6,6 +6,7 @@ require 'stringio'
 
 class TC_Flott < Test::Unit::TestCase
   include Flott
+  Flott.debug = false
 
   def setup
     @expected =<<__EOT
