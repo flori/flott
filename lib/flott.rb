@@ -217,9 +217,16 @@ module Flott
     attr_accessor :pathes
 
     def mtime
-      m = @pathes.map { |path| File.stat(path).mtime }.max
-      m
+      @pathes.map { |path| File.stat(path).mtime }.max
     end
+
+    def call(*)
+      super
+    rescue SyntaxError => e
+      raise CallError.wrap(e)
+    end
+
+    alias evaluate call
   end
 
   class Parser
@@ -435,20 +442,16 @@ module Flott
     # env. If no environment is given, a newly created environment is used.
     def evaluate(env = Environment.new, &block)
       env.instance_eval(&block) if block
-      compile.call(env)
+      compile.evaluate(env)
       self
-    rescue SyntaxError => e
-      raise CallError.wrap(e)
     end
 
     # The already compiled ruby code is evaluated in the environment env.
     # If no environment is given, a newly created environment is used.
     def self.evaluate(compiled, env = Environment.new, &block)
       env.instance_eval(&block) if block
-      compiled.call(env)
+      compiled.evaluate(env)
       self
-    rescue SyntaxError => e
-      raise CallError.wrap(e)
     end
 
     # Returns true if the source template is well formed. (That means at the

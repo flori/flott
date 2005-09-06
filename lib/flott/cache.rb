@@ -92,7 +92,7 @@ module Flott
     end
 
     def evaluate(name, env = Environment.new)
-      get(name) { |template| Parser.evaluate(template, env) } or return
+      get(name) { |template| template.evaluate(env) } or return
       self
     end
 
