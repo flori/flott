@@ -401,7 +401,6 @@ module Flott
           state.opened -= 1
           state.compiled << scanner[0]
         when scanner.scan(ESCOPEN)
-          state.opened += 1
           state.compiled << scanner[0]
         when scanner.scan(OPEN)
           state.opened += 1
