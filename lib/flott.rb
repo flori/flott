@@ -1,8 +1,8 @@
 require 'strscan'
 
-module Flott
 # This module includes the Flott::Parser class, that can be used to 
-# compile # Flott-Templates to Ruby Proc objects.
+# compile Flott-Templates to Flott::Template objects, which can then be
+# evaluted in an Flott::Environment.
 # 
 # If two template files are saved in the current directory.
 # One file "header":
@@ -70,13 +70,15 @@ module Flott
 #  
 #   </body>
 #  </html>
-
-
+module Flott
   class << self
+    # True switches debugging mode on, false off.
     attr_accessor :debug
   end
 
+  # The base exception of all Flott Exceptions, Errors.
   class FlottException < StandardError
+    # Wrap _exception_ into a FlottException, including the given backtrace.
     def self.wrap(exception)
       wrapper = new(exception.message)
       wrapper.set_backtrace exception.backtrace
@@ -146,14 +148,14 @@ module Flott
       hash.each { |name, value| self[name] = value }
     end
 
-    # Returns the instance variable _@name_.
+    # Returns the instance variable _name_.
     def [](name)
       name = name.to_s
       name = "@#{name}" unless name[0] == ?@
       instance_variable_get name
     end
 
-    # Sets the instance variable _@name_ to _value_.
+    # Sets the instance variable _name_ to _value_.
     def []=(name, value)
       name = name.to_s
       name = "@#{name}" unless name[0] == ?@
@@ -267,20 +269,28 @@ module Flott
 
     attr_reader :scanner
 
+    # Returns the shared state between all parsers that are parsing
+    # the current template and the included templates.
     def state
       @state ||= parent.state
     end
 
+    # Returns nil if this is the root parser, or a reference to the parent
+    # parser of this parser.
     attr_accessor :parent
 
+    # Compute the rootdir of this parser (these parsers). Cache the
+    # result and return it.
     def rootdir
       @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
+    # Change parsing mode to TextMode.
     def goto_text_mode
       @current_mode = @text
     end
 
+    # Change parsing mode to RubyMode.
     def goto_ruby_mode
       @current_mode = @ruby
     end
@@ -294,15 +304,22 @@ module Flott
         @filename ? [ @filename ] : [])
       compile_inner
       state.compiled << "\n}\n}"
-      begin
-        template = eval(state.compiled_string, nil, '(flott)')
-        template.pathes = state.pathes
-        template
-      rescue SyntaxError => e
-        raise EvalError.wrap(e)
-      end
+      string = state.compiled_string
+      create_template(string)
     end
 
+    def create_template(string)
+      template = eval(string, nil, '(flott)')
+      template.pathes = state.pathes
+      template
+    rescue SyntaxError => e
+      raise EvalError.wrap(e)
+    end
+    private :create_template
+
+    # Interpret filename for included templates. Beginning with '/' is the root
+    # directory, that is the workdir of the first parser in the tree. All other
+    # pathes are treated relative to this parsers workdir.
     def interpret_filename(filename)
       filename.untaint
       if filename[0] == ?/ 
@@ -313,26 +330,34 @@ module Flott
       filename
     end
 
+    # Fork another Parser to handle an included template.
     def fork(source, workdir)
       parser        = self.class.new(source, workdir)
       parser.parent = self
       parser.compile_inner
     end
-   
+  
+    # The base parsing mode. 
     class Mode
+      # Creates a parsing mode for _parser_.
       def initialize(parser)
         @parser = parser
       end
 
+      # The parsing mode uses this StringScanner instance for it's job,
+      # its the StringScanner of the current _parser_.
       def scanner
         @parser.scanner
       end
 
+      # A shortcut to reach the shared state of all the parsers involved in
+      # parsing the current template.
       def state
         @parser.state
       end
     end
- 
+
+    #  
     class TextMode < Mode
       # Include the template _filename_ at the current place 
       def include_template(filename)
@@ -426,6 +451,7 @@ module Flott
           state.compiled_string, scanner.peek(20) ])
       end
     end
+    private :debug_output
 
     def compile_inner  # :nodoc:
       until scanner.eos?
