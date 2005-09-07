@@ -2,14 +2,16 @@
 
 require 'rbconfig'
 require 'fileutils'
-
+include FileUtils::Verbose
 include Config
 
-$file = 'lib/flott.rb'
-$libdir = CONFIG["sitelibdir"]
+dest = CONFIG["sitelibdir"]
+mkdir_p(dest)
+file = 'lib/flott.rb'
+install(file, dest)
 
-$dest = $libdir
-FileUtils::mkdir_p($dest)
-$stderr.puts "Installing '#$file' into '#$dest'."
-FileUtils.install($file, $dest)
+dest = File.join(dest, 'flott')
+mkdir_p dest
+file = 'lib/flott/cache.rb'
+install(file, dest)
     # vim: set et sw=4 ts=4:
