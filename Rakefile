@@ -31,7 +31,7 @@ spec = Gem::Specification.new do |s|
 
     s.name = 'flott'
     s.version = PKG_VERSION
-    s.summary = "Implementation of lazy lists for Ruby"
+    s.summary = "Ruby as a templating language"
     s.description = ""
 
     #### Dependencies and requirements.
