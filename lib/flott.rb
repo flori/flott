@@ -133,9 +133,21 @@ module Flott
 
   # This module can be included into classes that should act as an environment
   # for Flott templates. An instance variable @output
-  # (EnvironmentExtension#output) should hold an output IO object.
+  # (EnvironmentExtension#output) should hold an output IO object. If no
+  # initialize method is defined in the including class,
+  # EnvironmentExtension#initialize uses STDOUT as this IO object.
   module EnvironmentExtension
     extend Delegate
+
+    # Creates an Environment object, that outputs to _output_. The default
+    # ouput stream is STDOUT.
+    def initialize(output = STDOUT)
+      @output = output
+    end
+
+    def environment_initialize(output = STDOUT)
+      EnvironmentExtension.instance_method(:initialize).bind(self).call(output)
+    end
 
     # The output object for the Environment objects.
     attr_writer :output
@@ -231,11 +243,10 @@ module Flott
   class Environment
     include EnvironmentExtension
 
-    # Creates an Environment object, that outputs to _output_. The default
-    # ouput stream is STDOUT.
-    def initialize(output = STDOUT)
-      @output = output
-    end
+
+    #def initialize(*a)
+    #  environment_initialize(*a)
+    #end
   end
 
   class ParserState < Struct.new(:opened, :last_open, :text,
