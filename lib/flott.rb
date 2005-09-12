@@ -30,8 +30,8 @@ require 'strscan'
 # The parser can be used like this
 #  fp = Flott::Parser.from_filename('template')
 #  env = Flott::Environment.new
-#  env.instance_variable_set :@name, "Florian"
-#  puts fp.evaluate(env)
+#  env[:name] = "Florian"
+#  fp.evaluate(env)
 #
 # The output is created by including "header" into "template" with the
 # <tt>[<filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
@@ -136,6 +136,16 @@ module Flott
   # (EnvironmentExtension#output) should hold an output IO object. If no
   # initialize method is defined in the including class,
   # EnvironmentExtension#initialize uses STDOUT as this IO object.
+  #
+  # If the class has its own initialize method, the environment can
+  # be initialized with EnvironmentExtension#environment_initialize like
+  # this:
+  #  class Environment
+  #    include EnvironmentExtension
+  #    def initialize(*a)
+  #      environment_initialize(*a)
+  #    end
+  #  end
   module EnvironmentExtension
     extend Delegate
 
@@ -242,11 +252,6 @@ module Flott
   # in.
   class Environment
     include EnvironmentExtension
-
-
-    #def initialize(*a)
-    #  environment_initialize(*a)
-    #end
   end
 
   class ParserState < Struct.new(:opened, :last_open, :text,
@@ -510,6 +515,7 @@ module Flott
     private :debug_output
 
     def compile_inner  # :nodoc:
+      scanner.reset
       until scanner.eos?
         debug_output
         @current_mode.scan
