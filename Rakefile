@@ -27,7 +27,7 @@ end
 
 
 task :doc do
-    sh 'rdoc -d -o doc lib/flott.rb lib/flott/cache.rb'
+    sh 'rdoc -o doc lib/flott.rb lib/flott/cache.rb'
 end
 
 spec = Gem::Specification.new do |s|

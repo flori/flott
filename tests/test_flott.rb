@@ -9,6 +9,7 @@ class TC_Flott < Test::Unit::TestCase
   Flott.debug = false
 
   def setup
+    @output = StringIO.new('')
     @expected =<<__EOT
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
    "http://www.w3.org/TR/html4/strict.dtd">
@@ -64,36 +65,33 @@ __EOT
   end
 
   def test_execute
-    output = StringIO.new('')
-    env = Environment.new(output)
+    env = Environment.new(@output)
     env[:name] = 'Flor<i>an'
     @parser.evaluate(env) 
-    assert_equal(@expected, output.string)
-    output.rewind
+    assert_equal(@expected, @output.string)
+    @output.rewind
     @parser.evaluate(env) 
-    assert_equal(@expected, output.string)
+    assert_equal(@expected, @output.string)
   end
 
   def test_compile_evaluate
-    output = StringIO.new('')
-    env = Environment.new(output)
+    env = Environment.new(@output)
     env[:@name] = 'Flor<i>an'
     compiled = @parser.compile
     Parser.evaluate(compiled, env)
-    assert_equal(@expected, output.string)
-    output.rewind
+    assert_equal(@expected, @output.string)
+    @output.rewind
     Parser.evaluate(compiled, env)
-    assert_equal(@expected, output.string)
+    assert_equal(@expected, @output.string)
   end
 
   def test_execute2
-    output = StringIO.new('')
-    env = Environment.new(output)
+    env = Environment.new(@output)
     @parser2.evaluate(env)
-    assert_match /Toplevel/, output.string
-    output.rewind
+    assert_match /Toplevel/, @output.string
+    @output.rewind
     @parser2.evaluate(env)
-    assert_match /Toplevel/, output.string
+    assert_match /Toplevel/, @output.string
   end
 
   def test_error
