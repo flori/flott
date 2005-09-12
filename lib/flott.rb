@@ -155,6 +155,9 @@ module Flott
       @output = output
     end
 
+    # Calls EnvironmentExtension#initialize. This method should be calle
+    # from classes that include EnvironmentExtension to initialize the
+    # environment.
     def environment_initialize(output = STDOUT)
       EnvironmentExtension.instance_method(:initialize).bind(self).call(output)
     end
