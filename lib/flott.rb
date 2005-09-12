@@ -274,18 +274,24 @@ module Flott
     end
   end
 
+  # Class for compiled Template objects, that can be evaluated later
+  # in an Environment.
   class Template < Proc
+    # Sets up a Template instance.
     def initialize
       super
       @pathes = []
     end
 
+    # The pathes of the template and all included sub-templates.
     attr_accessor :pathes
 
+    # Returns the newest _mtime_ of all the involved #pathes.
     def mtime
       @pathes.map { |path| File.stat(path).mtime }.max
     end
 
+    # Evaluates this Template Object in the Environment (first argument).
     def call(*)
       super
     rescue SyntaxError => e
@@ -295,6 +301,7 @@ module Flott
     alias evaluate call
   end
 
+  # 
   class Parser
     ESCOPEN   =   /\\\[/
     INCOPEN   =   /\[<\s*([^\]]+)\s*\]/
@@ -331,6 +338,7 @@ module Flott
       obj
     end
 
+    # The StringScanner instance of this Parser object.
     attr_reader :scanner
 
     # Returns the shared state between all parsers that are parsing
