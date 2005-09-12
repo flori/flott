@@ -64,24 +64,36 @@ __EOT
   end
 
   def test_execute
-    env = Environment.new(StringIO.new(output = ''))
+    output = StringIO.new('')
+    env = Environment.new(output)
     env[:name] = 'Flor<ian'
     @parser.evaluate(env) 
-    assert_equal(@expected, output)
+    assert_equal(@expected, output.string)
+    output.rewind
+    @parser.evaluate(env) 
+    assert_equal(@expected, output.string)
   end
 
   def test_compile_evaluate
-    env = Environment.new(StringIO.new(output = ''))
+    output = StringIO.new('')
+    env = Environment.new(output)
     env[:@name] = 'Flor<ian'
     compiled = @parser.compile
     Parser.evaluate(compiled, env)
-    assert_equal(@expected, output)
+    assert_equal(@expected, output.string)
+    output.rewind
+    Parser.evaluate(compiled, env)
+    assert_equal(@expected, output.string)
   end
 
   def test_execute2
-    env = Environment.new(StringIO.new(output = ''))
+    output = StringIO.new('')
+    env = Environment.new(output)
     @parser2.evaluate(env)
-    assert_match /Toplevel/, output
+    assert_match /Toplevel/, output.string
+    output.rewind
+    @parser2.evaluate(env)
+    assert_match /Toplevel/, output.string
   end
 
   def test_error
