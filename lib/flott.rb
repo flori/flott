@@ -131,16 +131,14 @@ module Flott
     end
   end
 
-  # This class can instantiate environment objects to evaluate Flott Templates
-  # in.
-  class Environment
+  # This module can be included into classes that should act as an environment
+  # for Flott templates. An instance variable @output
+  # (EnvironmentExtension#output) should hold an output IO object.
+  module EnvironmentExtension
     extend Delegate
 
-    # Creates an Environment object, that outputs to _output_. The default
-    # ouput stream is STDOUT.
-    def initialize(output = STDOUT)
-      @output = output
-    end
+    # The output object for the Environment objects.
+    attr_writer :output
 
     # Updates the instance variables of this environment with values from
     # _hash_.
@@ -225,6 +223,18 @@ module Flott
     # Call to IO#write after escaping the argument _string_.
     def write(string)
       @output.write Flott::Parser.escape(string)
+    end
+  end
+
+  # This class can instantiate environment objects to evaluate Flott Templates
+  # in.
+  class Environment
+    include EnvironmentExtension
+
+    # Creates an Environment object, that outputs to _output_. The default
+    # ouput stream is STDOUT.
+    def initialize(output = STDOUT)
+      @output = output
     end
   end
 
