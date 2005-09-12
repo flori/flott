@@ -14,24 +14,24 @@ class TC_Flott < Test::Unit::TestCase
    "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
-  <title>Hello Flor&lt;ian!</title>
+  <title>Hello Flor&lt;i&gt;an!</title>
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
  </head>
  <body>
 
- <h1>Hello Flor&lt;ian[!</h1>
+ <h1>Hello Flor&lt;i&gt;an[!</h1>
  
-     <i>Hello Flor<ian]!</i>
+     <i>Hello Flor<i>an]!</i>
    
-     <b>Hello Flor&lt;ian]!</b>
+     <b>Hello Flor&lt;i&gt;an]!</b>
    
-     <i>Hello Flor<ian]!</i>
+     <i>Hello Flor<i>an]!</i>
    
-     <b>Hello Flor&lt;ian]!</b>
+     <b>Hello Flor&lt;i&gt;an]!</b>
    
-     <i>Hello Flor<ian]!</i>
+     <i>Hello Flor<i>an]!</i>
    
-     <b>Hello Flor&lt;ian]!</b>
+     <b>Hello Flor&lt;i&gt;an]!</b>
    
  
  </body> ]
@@ -66,7 +66,7 @@ __EOT
   def test_execute
     output = StringIO.new('')
     env = Environment.new(output)
-    env[:name] = 'Flor<ian'
+    env[:name] = 'Flor<i>an'
     @parser.evaluate(env) 
     assert_equal(@expected, output.string)
     output.rewind
@@ -77,7 +77,7 @@ __EOT
   def test_compile_evaluate
     output = StringIO.new('')
     env = Environment.new(output)
-    env[:@name] = 'Flor<ian'
+    env[:@name] = 'Flor<i>an'
     compiled = @parser.compile
     Parser.evaluate(compiled, env)
     assert_equal(@expected, output.string)
