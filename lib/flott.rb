@@ -429,7 +429,7 @@ module Flott
       end
     end
 
-    #  
+    # This Mode class handles the Parsers TextMode state.
     class TextMode < Mode
       # Include the template _filename_ at the current place 
       def include_template(filename)
@@ -446,6 +446,7 @@ module Flott
       end
       private :include_template
 
+      # Scan the template in TextMode.
       def scan
         case
         when scanner.scan(ESCOPEN)
@@ -482,7 +483,9 @@ module Flott
       end
     end
 
+    # This Mode class handles the Parsers RubyMode state.
     class RubyMode < Mode
+      # Scan the template in RubyMode.
       def scan
         case
         when scanner.match?(CLOSE) && state.opened == 0
