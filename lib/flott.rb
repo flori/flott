@@ -36,7 +36,7 @@ require 'strscan'
 # The output is created by including "header" into "template" with the
 # <tt>[<filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
 # <tt>[print @name]</tt> while <tt>[=@name]</tt> first calls
-# Flott::Parser::escape on @name. It's also possible to just print or puts
+# Flott::Parser.escape on @name. It's also possible to just print or puts
 # strings.
 #
 # Note the use of the assignment to the instance variable @name before
@@ -184,13 +184,48 @@ module Flott
       nil
     end
 
-    delegate :puts, :@output
+    # The usual IO#puts call without any escaping.
+    delegate :puts!,    :@output, :puts
 
-    delegate :printf, :@output
+    # Call to IO#puts to print _objects_ after escaping all their String
+    # representations.
+    def puts(*objects)
+      @output.puts *objects.map { |o| Flott::Parser.escape(o) }
+    end
 
-    delegate :print, :@output
+    # The usual IO#printf call without any escaping.
+    delegate :printf!,  :@output, :printf
 
-    delegate :putc, :@output
+    # Print _objects_ after escaping all their String representations.
+    def printf(format, *args)
+      @output.print Flott::Parser.escape(sprintf(format, args))
+    end
+
+    # The usual IO#print call without any escaping.
+    delegate :print!,   :@output, :print
+
+    # Call to IO#print to print _objects_ after escaping all their String
+    # representations.
+    def print(*objects)
+      @output.print *objects.map { |o| Flott::Parser.escape(o) }
+    end
+
+    # The usual IO#putc call without any escaping.
+    delegate :putc!,    :@output, :putc
+
+    # Call to IO#putc after escaping the argument _object_.
+    def putc(object)
+      object = '' << object if object.is_a? Numeric
+      @output.putc Flott::Parser.escape(object)
+    end
+
+    # The usual IO#write call without any escaping.
+    delegate :write!,   :@output, :write
+
+    # Call to IO#write after escaping the argument _string_.
+    def write(string)
+      @output.write Flott::Parser.escape(string)
+    end
   end
 
   class ParserState < Struct.new(:opened, :last_open, :text,
@@ -198,7 +233,7 @@ module Flott
     # Transform text mode parts to compiled code parts.
     def text2compiled
       return if text.empty?
-      compiled << %{print '}
+      compiled << %{print! '}
       compiled.concat(text)
       compiled << %{';}
       text.clear
@@ -380,17 +415,17 @@ module Flott
           state.text << '['
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
-          include_template( scanner[1])
+          include_template(scanner[1])
         when scanner.scan(PRIOPEN)
           state.last_open = :PRIOPEN
           @parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << 'print Flott::Parser::escape(begin '
+          state.compiled << 'print(begin '
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
           @parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << 'print(begin '
+          state.compiled << 'print!(begin '
         when scanner.scan(COMOPEN)
           state.last_open = :COMOPEN
           @parser.goto_ruby_mode
