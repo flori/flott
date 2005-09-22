@@ -478,7 +478,7 @@ module Flott
         when scanner.scan(TEXT)
           state.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
         else
-          raise CompileError, "unknown tokens '#{peek(40)}'"
+          raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
         end
       end
     end
@@ -515,7 +515,7 @@ module Flott
         when scanner.scan(TEXT)
           state.compiled << scanner[0]
         else
-          raise CompileError, "unknown tokens '#{peek(40)}'"
+          raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
         end
       end
     end
