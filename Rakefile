@@ -1,5 +1,3 @@
-# Rakefile for File::Tail  -*- ruby -*-
-
 require 'rake/gempackagetask'
 require 'rbconfig'
 

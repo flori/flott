@@ -108,5 +108,9 @@ __EOT
       Parser.new('<bla>[<does_not_exist]</bla>').evaluate
     end
   end
+
+  def test_errors
+    assert Parser.new('puts "\n"').evaluate
+  end
 end
   # vim: set et sw=2 ts=2:
