@@ -110,7 +110,10 @@ __EOT
   end
 
   def test_errors
-    assert Parser.new('puts "\n"').evaluate
+    env = Environment.new(@output)
+    tmpl = 'puts "\n"'
+    assert Parser.new(tmpl).evaluate(env)
+    assert_equal(tmpl, @output.string)
   end
 end
   # vim: set et sw=2 ts=2:
