@@ -165,6 +165,15 @@ module Flott
     # The output object for the Environment objects.
     attr_writer :output
 
+    # XXX
+    def rootdir
+      @__rootdir__
+    end
+
+    def workdir
+      @__workdir__
+    end
+
     # Updates the instance variables of this environment with values from
     # _hash_.
     def update(hash)
@@ -197,7 +206,8 @@ module Flott
 
     private
     
-    # Include the template _filename_ into the current template at run-time.
+    # Dynamically Include the template _filename_ into the current template,
+    # that is, at run-time.
     def include(filename)
       Flott::Parser.new(File.read(filename)).evaluate(self)
     end
@@ -266,7 +276,9 @@ module Flott
   end
 
   class ParserState < Struct.new(:opened, :last_open, :text,
-      :compiled, :pathes)
+      :compiled, :pathes, :directories)
+    extend Delegate
+
     # Transform text mode parts to compiled code parts.
     def text2compiled
       return if text.empty?
@@ -279,6 +291,25 @@ module Flott
     # Return the whole compiled code as a string.
     def compiled_string
       compiled.join.untaint
+    end
+
+    def push_directories(parser)
+      workdir, rootdir = parser.workdir, parser.rootdir
+      compiled << "@__workdir__ = '#{workdir}';"
+      compiled << "@__rootdir__ = '#{rootdir}';"
+      directories << [ workdir, rootdir ]
+      self
+    end
+
+    delegate :top_directories, :directories, :first
+    
+    def pop_directories
+      directories.empty? and raise CompileError, "state directories were empty"
+      directories.pop
+      workdir, rootdir = top_directories
+      compiled << "@__workdir__ = '#{workdir}';"
+      compiled << "@__rootdir__ = '#{rootdir}';"
+      self
     end
   end
 
@@ -365,6 +396,9 @@ module Flott
       @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
+    # XXX
+    attr_reader :workdir
+
     # Change parsing mode to TextMode.
     def goto_text_mode
       @current_mode = @text
@@ -380,8 +414,9 @@ module Flott
     # _Parser#wellformed?_.
     def compile
       @state = ParserState.new(0, nil, [],
-        [ "Template.new { |env| env.instance_eval %q{\n" ],
-        @filename ? [ @filename ] : [])
+        [ "::Flott::Template.new { |env| env.instance_eval %q{\n" ],
+        @filename ? [ @filename ] : [], [])
+      @state.push_directories(self)
       compile_inner
       state.compiled << "\n}\n}"
       string = state.compiled_string
@@ -533,20 +568,23 @@ module Flott
 
     def debug_output
       if Flott.debug
-        p([ @current_mode.class, state.last_open, state.opened,
-          state.compiled_string, scanner.peek(20) ])
+        require 'pp'
+        pp([ @current_mode.class, state.last_open, state.opened,
+          state.compiled_string, state.directories, scanner.peek(20) ])
       end
     end
     private :debug_output
 
     def compile_inner  # :nodoc:
       scanner.reset
+      state.push_directories(self)
       until scanner.eos?
         debug_output
         @current_mode.scan
       end
       debug_output
       state.text2compiled
+      state.pop_directories
       debug_output
     end
     protected :compile_inner

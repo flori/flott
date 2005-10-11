@@ -115,5 +115,11 @@ __EOT
     assert Parser.new(tmpl).evaluate(env)
     assert_equal(tmpl, @output.string)
   end
+
+  def test_dynamic_include
+    env = Environment.new(@output)
+    @parser2.evaluate(env)
+    warn @output.string
+  end
 end
   # vim: set et sw=2 ts=2:
