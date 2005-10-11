@@ -439,6 +439,9 @@ module Flott
         @parser = parser
       end
 
+      # The parser this mode belongs to.
+      attr_reader :parser
+      
       # The parsing mode uses this StringScanner instance for it's job,
       # its the StringScanner of the current _parser_.
       def scanner
@@ -454,7 +457,6 @@ module Flott
 
     # This Mode class handles the Parser's TextMode state.
     class TextMode < Mode
-
       # Scan the template in TextMode.
       def scan
         case
@@ -462,25 +464,25 @@ module Flott
           state.text << '['
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
-          @parser.include_template(scanner[1])
+          parser.include_template(scanner[1])
         when scanner.scan(PRIOPEN)
           state.last_open = :PRIOPEN
-          @parser.goto_ruby_mode
+          parser.goto_ruby_mode
           state.text2compiled
           state.compiled << 'print(begin '
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
-          @parser.goto_ruby_mode
+          parser.goto_ruby_mode
           state.text2compiled
           state.compiled << 'print!(begin '
         when scanner.scan(COMOPEN)
           state.last_open = :COMOPEN
-          @parser.goto_ruby_mode
+          parser.goto_ruby_mode
           state.text2compiled
           state.compiled << "\n=begin\n"
         when scanner.scan(OPEN)
           state.last_open = :OPEN
-          @parser.goto_ruby_mode
+          parser.goto_ruby_mode
           state.text2compiled
         when scanner.scan(CLOSE)
           state.text << scanner[0]
@@ -499,7 +501,7 @@ module Flott
         case
         when scanner.match?(CLOSE) && state.opened == 0
           scanner.skip(CLOSE)
-          @parser.goto_text_mode
+          parser.goto_text_mode
           case state.last_open
           when :PRIOPEN
             state.compiled << ' end);'
