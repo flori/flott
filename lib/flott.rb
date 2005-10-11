@@ -219,7 +219,7 @@ module Flott
     end
 
     # Kernel#pp redirected to @output.
-    def pp(objects, out_ignore=nil, width = 79)
+    def pp(*objects)
       require 'pp'
       objects.each { |obj| PP.pp(obj, @output) }
       nil
