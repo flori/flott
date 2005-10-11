@@ -42,7 +42,7 @@ __EOT
     @parser = Parser.new(File.read(File.join(workdir, 'template')), workdir)
     @parser2 = Parser.from_filename(File.join(workdir, 'template2'))
   end
-
+=begin
   def test_kind
     assert_kind_of Parser, @parser
     assert_kind_of Parser, @parser2
@@ -115,7 +115,7 @@ __EOT
     assert Parser.new(tmpl).evaluate(env)
     assert_equal(tmpl, @output.string)
   end
-
+=end
   def test_dynamic_include
     env = Environment.new(@output)
     @parser2.evaluate(env)

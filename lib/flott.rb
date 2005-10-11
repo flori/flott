@@ -448,13 +448,16 @@ module Flott
 
     # Include the template _filename_ at the current place 
     def include_template(filename)
+p "1 " + filename
       filename = interpret_filename(filename)
       if File.readable?(filename)
         state.text2compiled
         state.pathes << filename
         source  = File.read(filename)
         workdir = File.dirname(filename)
+        p [ filename, workdir]
         fork(source, workdir)
+p "2" + filename
       else
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
