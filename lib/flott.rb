@@ -185,6 +185,7 @@ module Flott
       instance_variable_set name, value
     end
 
+
     # Creates a function (actually, a singleton method) _id_ from the block
     # _block_ on this object.
     def function(id, &block)
@@ -194,6 +195,13 @@ module Flott
 
     alias fun function
 
+    private
+    
+    # Include the template _filename_ into the current template at run-time.
+    def include(filename)
+      Flott::Parser.new(File.read(filename)).evaluate(self)
+    end
+    
     # Kernel#p redirected to @output.
     def p(*objects)
       objects.each { |o| @output.puts(o.inspect) }
@@ -401,6 +409,21 @@ module Flott
       end
       filename
     end
+    private :interpret_filename
+
+    # Include the template _filename_ at the current place 
+    def include_template(filename)
+      filename = interpret_filename(filename)
+      if File.readable?(filename)
+        state.text2compiled
+        state.pathes << filename
+        source  = File.read(filename)
+        workdir = File.dirname(filename)
+        fork(source, workdir)
+      else
+        raise CompileError, "Cannot open #{filename} for inclusion!"
+      end
+    end
 
     # Fork another Parser to handle an included template.
     def fork(source, workdir)
@@ -431,20 +454,6 @@ module Flott
 
     # This Mode class handles the Parser's TextMode state.
     class TextMode < Mode
-      # Include the template _filename_ at the current place 
-      def include_template(filename)
-        filename = @parser.interpret_filename(filename)
-        if File.readable?(filename)
-          state.text2compiled
-          state.pathes << filename
-          source  = File.read(filename)
-          workdir = File.dirname(filename) # TODO remember all the file pathes
-          @parser.fork(source, workdir)
-        else
-          raise CompileError, "Cannot open #{filename} for inclusion!"
-        end
-      end
-      private :include_template
 
       # Scan the template in TextMode.
       def scan
@@ -453,7 +462,7 @@ module Flott
           state.text << '['
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
-          include_template(scanner[1])
+          @parser.include_template(scanner[1])
         when scanner.scan(PRIOPEN)
           state.last_open = :PRIOPEN
           @parser.goto_ruby_mode
