@@ -230,13 +230,14 @@ module Flott
     private
    
     include Flott::FilenameMixin
+
     # Dynamically Include the template _filename_ into the current template,
     # that is, at run-time.
     def include(filename)
       filename = interpret_filename(filename)
       source = File.read(filename)
       Flott::Parser.new(source, workdir).evaluate(self.dup)
-    rescue
+    rescue # TODO logging??
       print "[dynamic include of '#{filename}' failed]"
     end
     
