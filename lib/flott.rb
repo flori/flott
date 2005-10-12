@@ -131,6 +131,23 @@ module Flott
     end
   end
 
+  # XXX
+  module FilenameMixin
+    # Interpret filename for included templates. Beginning with '/' is the root
+    # directory, that is the workdir of the first parser in the tree. All other
+    # pathes are treated relative to this parsers workdir.
+    def interpret_filename(filename)
+      filename.untaint
+      if filename[0] == ?/ 
+        filename = File.join(rootdir, filename[1, filename.size])
+      elsif workdir
+        filename = File.join(workdir, filename)
+      end
+      filename
+    end
+    private :interpret_filename
+  end
+
   # This module can be included into classes that should act as an environment
   # for Flott templates. An instance variable @output
   # (EnvironmentExtension#output) should hold an output IO object. If no
@@ -171,7 +188,7 @@ module Flott
     end
 
     def workdir
-      @__workdir__
+      @__workdir__ || @__rootdir__
     end
 
     # Updates the instance variables of this environment with values from
@@ -205,11 +222,16 @@ module Flott
     alias fun function
 
     private
-    
+   
+    include Flott::FilenameMixin
     # Dynamically Include the template _filename_ into the current template,
     # that is, at run-time.
     def include(filename)
-      Flott::Parser.new(File.read(filename)).evaluate(self)
+      filename = interpret_filename(filename)
+      source = File.read(filename)
+      Flott::Parser.new(source, workdir).evaluate(self.dup)
+    rescue
+      print "[dynamic include of '#{filename}' failed]"
     end
     
     # Kernel#p redirected to @output.
@@ -284,7 +306,7 @@ module Flott
       return if text.empty?
       compiled << %{print! '}
       compiled.concat(text)
-      compiled << %{';}
+      compiled << "'\n"
       text.clear
     end
 
@@ -295,7 +317,7 @@ module Flott
 require 'pp'
     def push_workdir(parser)
       workdir = parser.workdir
-      compiled << "@__workdir__ = '#{workdir}';"
+      compiled << "@__workdir__ = '#{workdir}'\n"
       directories << workdir
       pp :push, directories.reverse
       self
@@ -307,7 +329,7 @@ require 'pp'
       directories.empty? and raise CompileError, "state directories were empty"
       directories.pop
       pp :pop, directories.reverse
-      compiled << "@__workdir__ = '#{top_workdir}';\n"
+      compiled << "@__workdir__ = '#{top_workdir}'\n"
       self
     end
   end
@@ -341,6 +363,8 @@ require 'pp'
 
   # 
   class Parser
+    include Flott::FilenameMixin
+
     ESCOPEN   =   /\\\[/
     INCOPEN   =   /\[<\s*([^\]]+)\s*\]/
     PRIOPEN   =   /\[=\s*/
@@ -396,7 +420,7 @@ require 'pp'
     end
 
     # XXX
-    attr_reader :workdir
+    attr_accessor :workdir
 
     # Change parsing mode to TextMode.
     def goto_text_mode
@@ -415,13 +439,12 @@ require 'pp'
       @state = ParserState.new(0, nil, [],
         [
           "::Flott::Template.new { |env| env.instance_eval %q{\n",
-          "@__rootdir__ = '#{rootdir}';",
+          "@__rootdir__ = '#{rootdir}'\n",
         ],
         @filename ? [ @filename ] : [], [])
       compile_inner
       state.compiled << "\n}\n}"
       string = state.compiled_string
-      puts string
       create_template(string)
     end
 
@@ -433,20 +456,6 @@ require 'pp'
       raise EvalError.wrap(e)
     end
     private :create_template
-
-    # Interpret filename for included templates. Beginning with '/' is the root
-    # directory, that is the workdir of the first parser in the tree. All other
-    # pathes are treated relative to this parsers workdir.
-    def interpret_filename(filename)
-      filename.untaint
-      if filename[0] == ?/ 
-        filename = File.join(rootdir, filename[1, filename.size])
-      elsif @workdir
-        filename = File.join(@workdir, filename)
-      end
-      filename
-    end
-    private :interpret_filename
 
     # Include the template _filename_ at the current place 
     def include_template(filename)
@@ -544,13 +553,13 @@ p "end: including -> " + filename
           parser.goto_text_mode
           case state.last_open
           when :PRIOPEN
-            state.compiled << ' end);'
+            state.compiled << " end)\n"
           when :RAWOPEN
-            state.compiled << ' end.to_s);'
+            state.compiled << " end.to_s)\n"
           when :COMOPEN
             state.compiled << "\n=end\n"
           else
-            state.compiled << ';'
+            state.compiled << "\n"
           end
           state.last_open = nil
         when scanner.scan(ESCCLOSE)
@@ -582,7 +591,7 @@ p "end: including -> " + filename
 
     def compile_inner(workdir_changed = true)  # :nodoc:
       scanner.reset
-      require 'breakpoint'; breakpoint
+      #require 'breakpoint'; breakpoint
       workdir_changed and state.push_workdir(self)
       until scanner.eos?
         debug_output
@@ -590,7 +599,8 @@ p "end: including -> " + filename
       end
       debug_output
       state.text2compiled
-      require 'breakpoint'; breakpoint
+      puts :start_dump, state.compiled_string, :end_dump
+      #require 'breakpoint'; breakpoint
       workdir_changed and state.pop_workdir
       debug_output
     end
