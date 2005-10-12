@@ -11,11 +11,7 @@ PKG_FILES = Dir.glob("**/*").delete_if { |item|
 
 desc "Installing library"
 task :install  do
-    dest = CONFIG["sitelibdir"]
-    install('lib/flott.rb', dest)
-    dest = File.join(dest, 'flott')
-    mkdir_p dest
-    install('lib/flott/cache.rb', dest)
+    ruby 'install.rb'
 end
 
 desc "Testing library"
@@ -23,9 +19,8 @@ task :test do
     ruby 'tests/runner.rb'
 end
 
-
 task :doc do
-    sh 'rdoc -o doc lib/flott.rb lib/flott/cache.rb'
+    ruby 'make_doc.rb'
 end
 
 spec = Gem::Specification.new do |s|

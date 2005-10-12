@@ -101,6 +101,8 @@ module Flott
   # calling the evaluated Proc object.
   class CallError < ParserError; end
 
+  # This module contains methods to make delegation easier, if
+  # a class/module was extended with it.
   module Delegate
     # A method to easily delegate methods to an object, stored in an
     # instance variable, or to an object return by a method call. It's
@@ -131,7 +133,7 @@ module Flott
     end
   end
 
-  # XXX
+  # This module contains methods to interpret filenames of the templates.
   module FilenameMixin
     # Interpret filename for included templates. Beginning with '/' is the root
     # directory, that is the workdir of the first parser in the tree. All other
@@ -182,13 +184,16 @@ module Flott
     # The output object for the Environment objects.
     attr_writer :output
 
-    # XXX
+    # Returns the root directory of this environment, it should be
+    # constant during the whole evaluation.
     def rootdir
       @__rootdir__
     end
 
+    # Returns the current work directory of this environment. Ths
+    # value changes during evaluation of a template.
     def workdir
-      @__workdir__ || @__rootdir__
+      @__workdir__ or raise EvalError, "workdir was undefined"
     end
 
     # Updates the instance variables of this environment with values from
@@ -417,7 +422,7 @@ module Flott
       @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
-    # XXX
+    # Returns the current workdir of this parser.
     attr_accessor :workdir
 
     # Change parsing mode to TextMode.
