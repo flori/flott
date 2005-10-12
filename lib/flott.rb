@@ -75,6 +75,7 @@ module Flott
     # True switches debugging mode on, false off.
     attr_accessor :debug
   end
+  Flott.debug = false
 
   # The base exception of all Flott Exceptions, Errors.
   class FlottException < StandardError
@@ -330,9 +331,8 @@ module Flott
 
     alias evaluate call
   end
-  
 
-  # 
+  #  XXX
   class Parser
     # This class encapsulates the state, that is shared by all parsers
     # that were activated during the parse phase.
