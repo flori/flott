@@ -1,9 +1,4 @@
-require 'strscan'
-
-# This module includes the Flott::Parser class, that can be used to 
-# compile Flott-Templates to Flott::Template objects, which can then be
-# evaluted in an Flott::Environment.
-# 
+# XXX
 # If two template files are saved in the current directory.
 # One file "header":
 #  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -70,6 +65,11 @@ require 'strscan'
 #  
 #   </body>
 #  </html>
+require 'strscan'
+
+# This module includes the Flott::Parser class, that can be used to compile
+# Flott template files to Flott::Template objects, which can then be evaluted
+# in a Flott::Environment.
 module Flott
   class << self
     # True switches debugging mode on, false off.
@@ -108,6 +108,7 @@ module Flott
     # instance variable, or to an object return by a method call. It's
     # used like this:
     #   class A
+    #     extend Delegate
     #     delegate :method_here1, :@obj
     #     delegate :method_here2, :@obj,        :method_there2
     #     delegate :method_here3, :method_call, :method_there3
@@ -302,41 +303,6 @@ module Flott
     include EnvironmentExtension
   end
 
-  class ParserState < Struct.new(:opened, :last_open, :text,
-      :compiled, :pathes, :directories)
-    extend Delegate
-
-    # Transform text mode parts to compiled code parts.
-    def text2compiled
-      return if text.empty?
-      compiled << %{print! '}
-      compiled.concat(text)
-      compiled << "'\n"
-      text.clear
-    end
-
-    # Return the whole compiled code as a string.
-    def compiled_string
-      compiled.join.untaint
-    end
-
-    def push_workdir(parser)
-      workdir = parser.workdir
-      compiled << "@__workdir__ = '#{workdir}'\n"
-      directories << workdir
-      self
-    end
-
-    delegate :top_workdir, :directories, :last
-    
-    def pop_workdir
-      directories.empty? and raise CompileError, "state directories were empty"
-      directories.pop
-      compiled << "@__workdir__ = '#{top_workdir}'\n"
-      self
-    end
-  end
-
   # Class for compiled Template objects, that can be evaluated later
   # in an Environment.
   class Template < Proc
@@ -362,6 +328,76 @@ module Flott
     end
 
     alias evaluate call
+  end
+  
+  # This class encapsulates the state, that is shared by all parsers
+  # that were activated during the parse phase.
+  class State
+    extend Delegate
+
+    # Creates a new Flott::Parser::State instance to hold the current
+    # parser state.
+    def initialize
+      @opened       = 0
+      @last_open    = nil
+      @text         = []
+      @compiled     = []
+      @pathes       = []
+      @directories  = []
+    end
+
+    # The number of current open (unescaped) brackets.
+    attr_accessor :opened
+
+    # The type of the last opened bracket.
+    attr_accessor :last_open
+
+    # An array of all scanned text fragments.
+    attr_reader :text
+
+    # An array of the already compiled Ruby code fragments.
+    attr_reader :compiled
+
+    # An array of involved template file pathes, that is, also the statically
+    # included template file pathes.
+    attr_reader :pathes
+
+    # A stack array, that contains the work directories of all active templates
+    # (during parsing).
+    attr_reader :directories
+
+    # Transform text mode parts to compiled code parts.
+    def text2compiled
+      return if text.empty?
+      compiled << %{print! '}
+      compiled.concat(text)
+      compiled << "'\n"
+      text.clear
+    end
+
+    # Return the whole compiled code as a string.
+    def compiled_string
+      compiled.join.untaint
+    end
+
+    # Pushs the workdir of _parser_ onto the _directories_ stack.
+    def push_workdir(parser)
+      workdir = parser.workdir
+      compiled << "@__workdir__ = '#{workdir}'\n"
+      directories << workdir
+      self
+    end
+
+    # Returns the top directory from the _directories_ stack.
+    delegate :top_workdir, :directories, :last
+
+    # Pops the top directory from the _directories_ stack.
+    def pop_workdir
+      directories.empty? and raise CompileError, "state directories were empty"
+      directories.pop
+      compiled << "@__workdir__ = '#{top_workdir}'\n"
+      self
+    end
   end
 
   # 
@@ -439,12 +475,12 @@ module Flott
     # later. This method raises a ParserError exception if source is not
     # _Parser#wellformed?_.
     def compile
-      @state = ParserState.new(0, nil, [],
-        [
-          "::Flott::Template.new { |env| env.instance_eval %q{\n",
-          "@__rootdir__ = '#{rootdir}'\n",
-        ],
-        @filename ? [ @filename ] : [], [])
+      @state = State.new
+      state.compiled << [
+        "::Flott::Template.new { |env| env.instance_eval %q{\n",
+        "@__rootdir__ = '#{rootdir}'\n",
+      ]
+      state.pathes << @filename if @filename
       compile_inner
       state.compiled << "\n}\n}"
       string = state.compiled_string

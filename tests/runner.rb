@@ -14,7 +14,7 @@ require 'test_cache'
 
 class TS_AllTests
   def self.suite
-    suite = Test::Unit::TestSuite.new
+    suite = Test::Unit::TestSuite.new 'All Tests'
     suite << TC_Flott.suite
     suite << TC_Cache.suite
   end
