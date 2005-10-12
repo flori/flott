@@ -314,21 +314,19 @@ module Flott
     def compiled_string
       compiled.join.untaint
     end
-require 'pp'
+
     def push_workdir(parser)
       workdir = parser.workdir
       compiled << "@__workdir__ = '#{workdir}'\n"
       directories << workdir
-      pp :push, directories.reverse
       self
     end
 
-    delegate :top_workdir, :directories, :first
+    delegate :top_workdir, :directories, :last
     
     def pop_workdir
       directories.empty? and raise CompileError, "state directories were empty"
       directories.pop
-      pp :pop, directories.reverse
       compiled << "@__workdir__ = '#{top_workdir}'\n"
       self
     end
@@ -459,16 +457,13 @@ require 'pp'
 
     # Include the template _filename_ at the current place 
     def include_template(filename)
-p "start: including -> " + filename
       filename = interpret_filename(filename)
       if File.readable?(filename)
         state.text2compiled
         state.pathes << filename
         source  = File.read(filename)
         workdir = File.dirname(filename)
-pp [ :foo, filename, @workdir, workdir]
         fork(source, workdir)
-p "end: including -> " + filename
       else
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
@@ -591,7 +586,6 @@ p "end: including -> " + filename
 
     def compile_inner(workdir_changed = true)  # :nodoc:
       scanner.reset
-      #require 'breakpoint'; breakpoint
       workdir_changed and state.push_workdir(self)
       until scanner.eos?
         debug_output
@@ -599,8 +593,6 @@ p "end: including -> " + filename
       end
       debug_output
       state.text2compiled
-      puts :start_dump, state.compiled_string, :end_dump
-      #require 'breakpoint'; breakpoint
       workdir_changed and state.pop_workdir
       debug_output
     end

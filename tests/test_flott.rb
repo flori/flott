@@ -38,11 +38,41 @@ class TC_Flott < Test::Unit::TestCase
  </body> ]
 </html>
 __EOT
+  @expected2 =<<__EOT
+    <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+ <head>
+  <title>Hello !</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
+ </head>
+ <body>
+Workdir before (template2): /home/flori/cvs/ruby/flott/tests/templates
+Workdir 1 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Toplevel
+Workdir (toplevel): /home/flori/cvs/ruby/flott/tests/templates
+
+Workdir 2 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir (included2): /home/flori/cvs/ruby/flott/tests/templates/subdir/subdir2
+
+Workdir 3 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir (included3): /home/flori/cvs/ruby/flott/tests/templates/subdir
+
+Workdir 4 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Toplevel
+Workdir (toplevel): /home/flori/cvs/ruby/flott/tests/templates/subdir
+
+Workdir 5 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+
+Workdir after (template2): /home/flori/cvs/ruby/flott/tests/templates
+</body>
+</html>
+__EOT
     workdir = File.join(File.dirname(__FILE__), 'templates')
     @parser = Parser.new(File.read(File.join(workdir, 'template')), workdir)
     @parser2 = Parser.from_filename(File.join(workdir, 'template2'))
   end
-=begin
+
   def test_kind
     assert_kind_of Parser, @parser
     assert_kind_of Parser, @parser2
@@ -115,11 +145,11 @@ __EOT
     assert Parser.new(tmpl).evaluate(env)
     assert_equal(tmpl, @output.string)
   end
-=end
+
   def test_dynamic_include
     env = Environment.new(@output)
     @parser2.evaluate(env)
-    warn @output.string
+    assert @expected2, @output.string
   end
 end
   # vim: set et sw=2 ts=2:
