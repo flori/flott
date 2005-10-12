@@ -305,8 +305,8 @@ module Flott
     include EnvironmentExtension
   end
 
-  # Class for compiled Template objects, that can be evaluated later
-  # in an Environment.
+  # Class for compiled Template objects, that can later be evaluated in a
+  # Flott::Environment.
   class Template < Proc
     # Sets up a Template instance.
     def initialize
@@ -332,7 +332,8 @@ module Flott
     alias evaluate call
   end
 
-  #  XXX
+  # The Flott::Parser class creates parser objects, that can be used to compile
+  # Flott template documents or files to Flott::Template іnstances.
   class Parser
     # This class encapsulates the state, that is shared by all parsers
     # that were activated during the parse phase.
@@ -417,7 +418,7 @@ module Flott
     TEXT      =   /[^\\\]\[]+/
     ESC       =   /\\/
 
-    # Creates a Parser object. _workdir_ is the directory, on which
+    # Creates a Parser object. _workdir_ is the directory, on which relative
     # template inclusions are based.
     def initialize(source, workdir = nil)
       if workdir
@@ -431,7 +432,8 @@ module Flott
       @scanner = StringScanner.new(source)
     end
 
-    # Creates a Parser object from _filename_
+    # Creates a Parser object from _filename_, the _workdir_ attribute is set
+    # to the directory the file is located in.
     def self.from_filename(filename)
       filename  = File.expand_path(filename)
       workdir   = File.dirname(filename)
@@ -460,7 +462,7 @@ module Flott
       @rootdir ||= parent ? parent.rootdir : @workdir
     end
 
-    # Returns the current workdir of this parser.
+    # Returns the current work directory of this parser.
     attr_accessor :workdir
 
     # Change parsing mode to TextMode.
@@ -486,17 +488,12 @@ module Flott
       compile_inner
       state.compiled << "\n}\n}"
       string = state.compiled_string
-      create_template(string)
-    end
-
-    def create_template(string)
       template = eval(string, nil, '(flott)')
       template.pathes = state.pathes
       template
     rescue SyntaxError => e
       raise EvalError.wrap(e)
     end
-    private :create_template
 
     # Include the template _filename_ at the current place 
     def include_template(filename)
