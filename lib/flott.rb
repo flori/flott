@@ -331,78 +331,79 @@ module Flott
     alias evaluate call
   end
   
-  # This class encapsulates the state, that is shared by all parsers
-  # that were activated during the parse phase.
-  class State
-    extend Delegate
-
-    # Creates a new Flott::Parser::State instance to hold the current
-    # parser state.
-    def initialize
-      @opened       = 0
-      @last_open    = nil
-      @text         = []
-      @compiled     = []
-      @pathes       = []
-      @directories  = []
-    end
-
-    # The number of current open (unescaped) brackets.
-    attr_accessor :opened
-
-    # The type of the last opened bracket.
-    attr_accessor :last_open
-
-    # An array of all scanned text fragments.
-    attr_reader :text
-
-    # An array of the already compiled Ruby code fragments.
-    attr_reader :compiled
-
-    # An array of involved template file pathes, that is, also the statically
-    # included template file pathes.
-    attr_reader :pathes
-
-    # A stack array, that contains the work directories of all active templates
-    # (during parsing).
-    attr_reader :directories
-
-    # Transform text mode parts to compiled code parts.
-    def text2compiled
-      return if text.empty?
-      compiled << %{print! '}
-      compiled.concat(text)
-      compiled << "'\n"
-      text.clear
-    end
-
-    # Return the whole compiled code as a string.
-    def compiled_string
-      compiled.join.untaint
-    end
-
-    # Pushs the workdir of _parser_ onto the _directories_ stack.
-    def push_workdir(parser)
-      workdir = parser.workdir
-      compiled << "@__workdir__ = '#{workdir}'\n"
-      directories << workdir
-      self
-    end
-
-    # Returns the top directory from the _directories_ stack.
-    delegate :top_workdir, :directories, :last
-
-    # Pops the top directory from the _directories_ stack.
-    def pop_workdir
-      directories.empty? and raise CompileError, "state directories were empty"
-      directories.pop
-      compiled << "@__workdir__ = '#{top_workdir}'\n"
-      self
-    end
-  end
 
   # 
   class Parser
+    # This class encapsulates the state, that is shared by all parsers
+    # that were activated during the parse phase.
+    class State
+      extend Delegate
+
+      # Creates a new Flott::Parser::State instance to hold the current
+      # parser state.
+      def initialize
+        @opened       = 0
+        @last_open    = nil
+        @text         = []
+        @compiled     = []
+        @pathes       = []
+        @directories  = []
+      end
+
+      # The number of current open (unescaped) brackets.
+      attr_accessor :opened
+
+      # The type of the last opened bracket.
+      attr_accessor :last_open
+
+      # An array of all scanned text fragments.
+      attr_reader :text
+
+      # An array of the already compiled Ruby code fragments.
+      attr_reader :compiled
+
+      # An array of involved template file pathes, that is, also the statically
+      # included template file pathes.
+      attr_reader :pathes
+
+      # A stack array, that contains the work directories of all active templates
+      # (during parsing).
+      attr_reader :directories
+
+      # Transform text mode parts to compiled code parts.
+      def text2compiled
+        return if text.empty?
+        compiled << %{print! '}
+        compiled.concat(text)
+        compiled << "'\n"
+        text.clear
+      end
+
+      # Return the whole compiled code as a string.
+      def compiled_string
+        compiled.join.untaint
+      end
+
+      # Pushs the workdir of _parser_ onto the _directories_ stack.
+      def push_workdir(parser)
+        workdir = parser.workdir
+        compiled << "@__workdir__ = '#{workdir}'\n"
+        directories << workdir
+        self
+      end
+
+      # Returns the top directory from the _directories_ stack.
+      delegate :top_workdir, :directories, :last
+
+      # Pops the top directory from the _directories_ stack.
+      def pop_workdir
+        directories.empty? and raise CompileError, "state directories were empty"
+        directories.pop
+        compiled << "@__workdir__ = '#{top_workdir}'\n"
+        self
+      end
+    end
+
     include Flott::FilenameMixin
 
     ESCOPEN   =   /\\\[/
