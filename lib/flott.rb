@@ -103,12 +103,12 @@ module Flott
 
   module Delegate
     # A method to easily delegate methods to an object, stored in an
-    # instance variable, or to an object return by a reader attribute. It's
+    # instance variable, or to an object return by a method call. It's
     # used like this:
     #   class A
     #     delegate :method_here1, :@obj
-    #     delegate :method_here2, :@obj, :method_there2
-    #     delegate :method_here3, :reader, :method_there3
+    #     delegate :method_here2, :@obj,        :method_there2
+    #     delegate :method_here3, :method_call, :method_there3
     #   end
     def delegate(method_name, obj, other_method_name = method_name)
       raise ArgumentError, "obj wasn't defined" unless obj
@@ -292,23 +292,22 @@ module Flott
     def compiled_string
       compiled.join.untaint
     end
-
-    def push_directories(parser)
-      workdir, rootdir = parser.workdir, parser.rootdir
+require 'pp'
+    def push_workdir(parser)
+      workdir = parser.workdir
       compiled << "@__workdir__ = '#{workdir}';"
-      compiled << "@__rootdir__ = '#{rootdir}';"
-      directories << [ workdir, rootdir ]
+      directories << workdir
+      pp :push, directories.reverse
       self
     end
 
-    delegate :top_directories, :directories, :first
+    delegate :top_workdir, :directories, :first
     
-    def pop_directories
+    def pop_workdir
       directories.empty? and raise CompileError, "state directories were empty"
       directories.pop
-      workdir, rootdir = top_directories
-      compiled << "@__workdir__ = '#{workdir}';"
-      compiled << "@__rootdir__ = '#{rootdir}';"
+      pp :pop, directories.reverse
+      compiled << "@__workdir__ = '#{top_workdir}';\n"
       self
     end
   end
@@ -414,12 +413,15 @@ module Flott
     # _Parser#wellformed?_.
     def compile
       @state = ParserState.new(0, nil, [],
-        [ "::Flott::Template.new { |env| env.instance_eval %q{\n" ],
+        [
+          "::Flott::Template.new { |env| env.instance_eval %q{\n",
+          "@__rootdir__ = '#{rootdir}';",
+        ],
         @filename ? [ @filename ] : [], [])
-      @state.push_directories(self)
       compile_inner
       state.compiled << "\n}\n}"
       string = state.compiled_string
+      puts string
       create_template(string)
     end
 
@@ -448,16 +450,16 @@ module Flott
 
     # Include the template _filename_ at the current place 
     def include_template(filename)
-p "1 " + filename
+p "start: including -> " + filename
       filename = interpret_filename(filename)
       if File.readable?(filename)
         state.text2compiled
         state.pathes << filename
         source  = File.read(filename)
         workdir = File.dirname(filename)
-        p [ filename, workdir]
+pp [ :foo, filename, @workdir, workdir]
         fork(source, workdir)
-p "2" + filename
+p "end: including -> " + filename
       else
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
@@ -467,7 +469,7 @@ p "2" + filename
     def fork(source, workdir)
       parser        = self.class.new(source, workdir)
       parser.parent = self
-      parser.compile_inner
+      parser.compile_inner(@workdir != workdir)
     end
   
     # The base parsing mode. 
@@ -578,16 +580,18 @@ p "2" + filename
     end
     private :debug_output
 
-    def compile_inner  # :nodoc:
+    def compile_inner(workdir_changed = true)  # :nodoc:
       scanner.reset
-      state.push_directories(self)
+      require 'breakpoint'; breakpoint
+      workdir_changed and state.push_workdir(self)
       until scanner.eos?
         debug_output
         @current_mode.scan
       end
       debug_output
       state.text2compiled
-      state.pop_directories
+      require 'breakpoint'; breakpoint
+      workdir_changed and state.pop_workdir
       debug_output
     end
     protected :compile_inner

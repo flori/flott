@@ -1,4 +1,5 @@
+Workdir before1 (included): [=workdir]
 [</toplevel]
-Workdir before (included): [=workdir]
+Workdir before2 (included): [=workdir]
 [<subdir2/included2]
 Workdir after (included): [=workdir]
