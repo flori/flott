@@ -6,4 +6,4 @@ include Bullshit
 for b in Dir['[0-9]*_benchmark_*.rb']
   require b
 end
-RepeatCase.run_all
+Case.run_all

@@ -1,3 +1,5 @@
+require 'timeout'
+
 module Bullshit
   class BullshitException < StandardError; end
 
@@ -9,11 +11,31 @@ module Bullshit
       @total = @utime + @stime + @cutime + @cstime
     end
 
-    def self.stop
+    attr_accessor :repeat
+
+    def self.stop(repeat)
       start = Process.times.to_a << Time.now
-      yield
+      repeat.times { yield }
       stop = Process.times.to_a << Time.now
-      new(*stop.zip(start).map { |x, y| x - y })
+      clock = new(*stop.zip(start).map { |x, y| x - y })
+      clock.repeat = repeat
+      clock
+    end
+
+    def self.repeat(time)
+      repeat = 0
+      start = Process.times.to_a << s = Time.now
+      timeout(time) do
+        loop do
+          yield
+          repeat += 1
+        end
+      end
+    rescue Timeout::Error
+      stop = Process.times.to_a << Time.now
+      clock = new(*stop.zip(start).map { |x, y| x - y })
+      clock.repeat = repeat
+      clock
     end
 
     # utime: Amount of User CPU time, in seconds
@@ -53,7 +75,7 @@ module Bullshit
     end
 
     def to_s
-      "%10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" %
+      "%10.6f %10.6f %10.6f %10.6f %10.6f %10.6f" %
         [ real, total, utime, stime, cutime, cstime ]
     end
   end
@@ -74,61 +96,75 @@ module Bullshit
     yield reporter
   end
 
-  module CaseExtension
-    def cases
-      @cases ||= []
+  class Case
+    class Script
     end
 
-    def inherited(klass)
-      cases << klass
+    module CaseExtension
+      def inherited(klass)
+        Case.cases << klass
+      end
     end
 
-    def each(&block)
-      cases.each(&block)
-    end
+    class << self
+      def inherited(klass)
+        klass.extend CaseExtension
+      end
 
-    def run_all
-      each do |bc_klass|
-        bc = bc_klass.new
-        STDERR.puts "Running Bullshit::Case '#{bc_klass}'."
-        Bullshit.process(bc) do |reporter|
-          begin
-            bc.setup
-            bc.run(reporter)
-          rescue => e
-            puts "Caught #{e.class}: #{([e] + e.backtrace) * "\n"}"
-          ensure
-            bc.teardown
-            bc = bc_klass.new
+      def cases
+        @cases ||= []
+      end
+
+      def each(&block)
+        cases.each(&block)
+      end
+
+      def run_method(bc, bmethod)
+        bc.run(bmethod)
+      rescue => e
+        puts "Caught #{e.class}: #{([e] + e.backtrace) * "\n"}"
+      ensure
+        bc.teardown
+      end
+
+      def run_all
+        each do |bc_klass|
+          bc = bc_klass.new
+          puts "Running Bullshit::Case '#{bc_klass}':"
+          bc.bmethods.each do |bmethod|
+            run_method(bc, bmethod)
           end
+          puts
         end
       end
     end
-  end
 
-  class Case
-    extend CaseExtension
-
-    def benchmarks
-      methods.grep(/^benchmark_/).sort_by { rand }
+    def initialize
+      setup
     end
 
-    def shorten(name)
-      name.sub(/^benchmark_/, '')
+    class CaseMethod < Struct.new(:name)
+      def short_name
+        @short_name ||= name.sub(/^benchmark_/, '')
+      end
     end
 
-    def names
-      benchmarks.map { |x| shorten(x) }
+    def bmethods
+      @bmethods ||= methods.grep(/^benchmark_/).sort_by { rand }.map do |n|
+        CaseMethod.new(n)
+      end
     end
 
     def longest_name
-      names.max { |a, b| a.size <=> b.size }.size
+      bmethods.max { |a, b|
+        a.short_name.size <=> b.short_name.size
+      }.short_name.size
     end
 
     def setup
     end
 
-    def run
+    def run(*)
     end
     
     def teardown
@@ -137,43 +173,30 @@ module Bullshit
 
   class TimeCase < Case
     def initialize
-      super
       @time = 10
+      super
     end
 
     attr_accessor :time
 
-    def run(reporter)
-      benchmarks.each do |b|
-        start = Time.now
-        count = 0
-        until Time.now - @time > start
-          __send__(b)
-          count += 1
-        end
-        #reporter.report(shorten(b), foo)
-      end
+    def run(b)
+      clock = Clock.repeat(@time) { __send__(b.name) }
+      printf "% -#{longest_name}s: %s %u\n", b.short_name, clock.to_s, clock.repeat
+      #reporter.report(shorten(b), foo)
     end
   end
 
   class RepeatCase < Case
     def initialize
-      super
       @repeat = 1
+      super
     end
 
     attr_accessor :repeat
 
-    def format(time, repeat)
-    end
-
-    def run(reporter)
-      benchmarks.each do |b|
-        start = Time.now
-        repeat.times { __send__(b) }
-        duration = Time.now - start
-        #reporter.report(shorten(b), foo)
-      end
+    def run(b)
+      clock = Clock.stop(repeat) { __send__(b.name) }
+      printf "% -#{longest_name}s: %s %u\n", b.short_name, clock.to_s, clock.repeat
     end
   end
 end
