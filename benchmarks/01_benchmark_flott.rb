@@ -11,8 +11,8 @@ class BC_FlottTime < Bullshit::TimeCase
     @time   = 10
     @null   = File.new('/dev/null', 'w')
     STDOUT.reopen @null
-    @flott  = Parser.new('AAAAA[=Time.now]AAAAA' * 1000).compile
-    @erb    = ERB.new('AAAAA<%=Time.now%>AAAAA' * 1000, 0, '%<>')
+    @flott  = Parser.new( %'AAAAA[!Time.now]AAAAA' * 10).compile
+    @erb    = ERB.new(    %'AAAAA<%=Time.now%>AAAAA' * 10, 0, '%<>')
     @env    = Environment.new(@null)
   end
 
