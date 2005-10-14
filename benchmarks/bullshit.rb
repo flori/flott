@@ -87,7 +87,7 @@ module Bullshit
 
     def report(name)
       measure = 0.0
-      printf "%#{@benchmark_case.longest_name}s:%s\n", name, measure
+      STDERR.printf "%#{@benchmark_case.longest_name}s:%s\n", name, measure
     end
   end
   
@@ -122,7 +122,7 @@ module Bullshit
       def run_method(bc, bmethod)
         bc.run(bmethod)
       rescue => e
-        puts "Caught #{e.class}: #{([e] + e.backtrace) * "\n"}"
+        STDERR.puts "Caught #{e.class}: #{([e] + e.backtrace) * "\n"}"
       ensure
         bc.teardown
       end
@@ -130,11 +130,11 @@ module Bullshit
       def run_all
         each do |bc_klass|
           bc = bc_klass.new
-          puts "Running Bullshit::Case '#{bc_klass}':"
+          STDERR.puts "Running Bullshit::Case '#{bc_klass}':"
           bc.bmethods.each do |bmethod|
             run_method(bc, bmethod)
           end
-          puts
+          STDERR.puts
         end
       end
     end
@@ -180,8 +180,10 @@ module Bullshit
     attr_accessor :time
 
     def run(b)
+      STDERR.printf "% -#{longest_name}s: ", b.short_name
       clock = Clock.repeat(@time) { __send__(b.name) }
-      printf "% -#{longest_name}s: %s %u\n", b.short_name, clock.to_s, clock.repeat
+      STDERR.printf "%s %10u %10.6f\n", clock.to_s, clock.repeat,
+        clock.repeat / clock.total
       #reporter.report(shorten(b), foo)
     end
   end
@@ -195,8 +197,10 @@ module Bullshit
     attr_accessor :repeat
 
     def run(b)
+      STDERR.printf "% -#{longest_name}s: ", b.short_name
       clock = Clock.stop(repeat) { __send__(b.name) }
-      printf "% -#{longest_name}s: %s %u\n", b.short_name, clock.to_s, clock.repeat
+      STDERR.printf "%s %10u %10.6f\n", clock.to_s, clock.repeat,
+        clock.repeat / clock.total
     end
   end
 end

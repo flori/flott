@@ -10,8 +10,9 @@ class BC_FlottTime < Bullshit::TimeCase
   def setup
     @time   = 10
     @null   = File.new('/dev/null', 'w')
-    @flott  = Parser.new('AAAAA[!Time.now]AAAAA' * 100)
-    @erb    = ERB.new('AAAAA<%=Time.now%>AAAAA' * 100, 0, '%<>')
+    STDOUT.reopen @null
+    @flott  = Parser.new('AAAAA[=Time.now]AAAAA' * 1000).compile
+    @erb    = ERB.new('AAAAA<%=Time.now%>AAAAA' * 1000, 0, '%<>')
     @env    = Environment.new(@null)
   end
 
@@ -20,7 +21,7 @@ class BC_FlottTime < Bullshit::TimeCase
   end
 
   def benchmark_erb
-    @erb.result
+    @erb.run
   end
 end
 
