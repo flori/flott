@@ -168,8 +168,6 @@ module Flott
   #    end
   #  end
   module EnvironmentExtension
-    extend Delegate
-
     # Creates an Environment object, that outputs to _output_. The default
     # ouput object is STDOUT, but any object that responds to #<< will do.
     # _escape_ is a object that responds to #call (usually a Proc instance),
