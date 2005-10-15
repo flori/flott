@@ -11,18 +11,28 @@ class BC_FlottTime < Bullshit::TimeCase
     require 'kashmir'
   rescue LoadError
   end
+
+  begin
+    require 'eruby'
+  rescue LoadError
+  end
+
+  repeat_duration 10
   
   def setup
-    @time   = 10
-    #@null   = File.new('/dev/null', 'w')
-    require 'stringio'
-    @null    = StringIO.new
-    #STDOUT.reopen @null
+    @output = String.new 
     @flott  = Parser.new( %'AAAAA[!Time.now]AAAAA' * 10).compile
     @erb    = ERB.new(    %'AAAAA<%=Time.now%>AAAAA' * 10, 0, '%<>')
-    @env    = Environment.new(@null)
+    @env    = Environment.new(@output)
     if defined? Kashmir
       @kashmir = Kashmir.new(%'AAAAA^(Time.now)AAAAA' * 10)
+    end
+    if defined? ERuby
+      require 'stringio'
+      ec = ERuby::Compiler.new
+      @eruby = ec.compile_string(%'AAAAA<%=Time.now%>AAAAA' * 10)
+      @output = ''
+      $stdout = StringIO.new(@output)
     end
   end
 
@@ -30,61 +40,23 @@ class BC_FlottTime < Bullshit::TimeCase
     @flott.evaluate(@env)
   end
 
-#  def benchmark_erb
-#    @erb.run
-#  end
+  def benchmark_erb
+    @erb.result
+  end
 
 if defined? Kashmir
   def benchmark_kashmir
     @kashmir.expand(Object.new)
   end
 end
+
+if defined? ERuby
+  def benchmark_eruby
+    eval(@eruby)
+    #STDERR.puts @output.inspect
+  end
+end
 end
 
 =begin
-class BC_FlottRepeat < Bullshit::RepeatCase
-  def setup
-    @repeat     = 10
-    @how_many   = 100
-    @part       = 'A' * 100
-    @str        = ''
-    @ary        = []
-  end
-
-  def benchmark_concat
-    @how_many.times { @str << @part }
-  end
-
-  def benchmark_join
-    @how_many.times { @ary << @part }
-    @ary.join
-  end
-
-  def benchmark_append
-    @how_many.times { @str += @part }
-  end
-end
-
-class BC_FlottTime < Bullshit::TimeCase
-  def setup
-    @time       = 1
-    @how_many   = 100
-    @part       = 'A' * 100
-    @str        = ''
-    @ary        = []
-  end
-
-  def benchmark_concat
-    @how_many.times { @str << @part }
-  end
-
-  def benchmark_join
-    @how_many.times { @ary << @part }
-    @ary.join
-  end
-
-  def benchmark_append
-    @how_many.times { @str += @part }
-  end
-end
 =end

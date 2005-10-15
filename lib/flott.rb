@@ -184,7 +184,7 @@ module Flott
     end
 
     # The output object for the Environment objects.
-    attr_writer :output
+    attr_accessor :output
 
     # Returns the root directory of this environment, it should be
     # constant during the whole evaluation.
@@ -244,58 +244,83 @@ module Flott
     
     # Kernel#p redirected to @output.
     def p(*objects)
-      objects.each { |o| @output.puts(o.inspect) }
+      objects.each do |o|
+        string = o.inspect 
+        @output << string
+        @output << "\n" unless string[-1] == ?\n
+      end
       nil
     end
 
     # Kernel#pp redirected to @output.
     def pp(*objects)
       require 'pp'
-      objects.each { |obj| PP.pp(obj, @output) }
+      objects.each { |o| PP.pp(o, @output) }
       nil
     end
 
     # The usual IO#puts call without any escaping.
-    delegate :puts!,    :@output, :puts
-
+    def puts!(*objects)
+      objects.each do |o|
+        string = o.to_s
+        @output << string
+        @output << "\n" unless string[-1] == ?\n
+      end
+      nil
+    end
+    
     # Call to IO#puts to print _objects_ after escaping all their String
     # representations.
     def puts(*objects)
-      @output.puts *objects.map { |o| Flott::Parser.escape(o) }
+      objects.each do |o|
+        string = Flott::Parser.escape(o)
+        @output << string
+        @output << "\n" unless string[-1] == ?\n
+      end
+      nil
     end
 
     # The usual IO#printf call without any escaping.
-    delegate :printf!,  :@output, :printf
+    def printf!(format, *args)
+      @output << sprintf(format, args)
+      nil
+    end
 
     # Print _objects_ after escaping all their String representations.
     def printf(format, *args)
-      @output.print Flott::Parser.escape(sprintf(format, args))
+      @output << Flott::Parser.escape(sprintf(format, args))
+      nil
     end
 
     # The usual IO#print call without any escaping.
-    delegate :print!,   :@output, :print
+    def print!(*objects)
+      objects.each do |o|
+        @output << Flott::Parser.escape(o)
+      end
+      nil
+    end
 
     # Call to IO#print to print _objects_ after escaping all their String
     # representations.
     def print(*objects)
-      @output.print *objects.map { |o| Flott::Parser.escape(o) }
-    end
-
-    # The usual IO#putc call without any escaping.
-    delegate :putc!,    :@output, :putc
-
-    # Call to IO#putc after escaping the argument _object_.
-    def putc(object)
-      object = '' << object if object.is_a? Numeric
-      @output.putc Flott::Parser.escape(object)
+      objects.each do |o|
+        @output << o.to_s
+      end
+      nil
     end
 
     # The usual IO#write call without any escaping.
-    delegate :write!,   :@output, :write
+    def write!(object)
+      string object.to_s
+      @output << string
+      string.size
+    end
 
-    # Call to IO#write after escaping the argument _string_.
-    def write(string)
-      @output.write Flott::Parser.escape(string)
+    # Call to IO#write after escaping the argument _object_.
+    def write(object)
+      string = Flott::Parser.escape(object)
+      @output << string
+      string.size
     end
   end
 
@@ -374,7 +399,7 @@ module Flott
       # Transform text mode parts to compiled code parts.
       def text2compiled
         return if text.empty?
-        compiled << %{print! '}
+        compiled << %{@output<<'}
         compiled.concat(text)
         compiled << "'\n"
         text.clear
@@ -553,12 +578,12 @@ module Flott
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << 'print(begin '
+          state.compiled << '@output<<Flott::Parser.escape(begin '
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << 'print!(begin '
+          state.compiled << '@output<<(begin '
         when scanner.scan(COMOPEN)
           state.last_open = :COMOPEN
           parser.goto_ruby_mode

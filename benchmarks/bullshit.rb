@@ -126,11 +126,11 @@ module Bullshit
       ensure
         bc.teardown
       end
-
+      
       def run_all
         each do |bc_klass|
           bc = bc_klass.new
-          STDERR.puts "Running Bullshit::Case '#{bc_klass}':"
+          STDERR.puts bc_klass.message
           bc.bmethods.each do |bmethod|
             run_method(bc, bmethod)
           end
@@ -172,16 +172,21 @@ module Bullshit
   end
 
   class TimeCase < Case
-    def initialize
-      @time = 10
-      super
+    class << self
+      def repeat_duration(seconds)
+        @duration = seconds
+      end
+
+      attr_reader :duration
+
+      def message
+        "Running '#{self}' for a duration of #{duration} secs:"
+      end
     end
-
-    attr_accessor :time
-
+    
     def run(b)
       STDERR.printf "% -#{longest_name}s: ", b.short_name
-      clock = Clock.repeat(@time) { __send__(b.name) }
+      clock = Clock.repeat(self.class.duration) { __send__(b.name) }
       STDERR.printf "%s %10u %10.6f\n", clock.to_s, clock.repeat,
         clock.repeat / clock.total
       #reporter.report(shorten(b), foo)
@@ -189,16 +194,21 @@ module Bullshit
   end
 
   class RepeatCase < Case
-    def initialize
-      @repeat = 1
-      super
-    end
+    class << self
+      def repeat_iterations(iterations)
+        @iterations = iterations
+      end
 
-    attr_accessor :repeat
+      attr_reader :iterations
+
+      def message
+        "Running '#{self}' for #{iterations} iterations:"
+      end
+    end
 
     def run(b)
       STDERR.printf "% -#{longest_name}s: ", b.short_name
-      clock = Clock.stop(repeat) { __send__(b.name) }
+      clock = Clock.stop(self.class.iterations) { __send__(b.name) }
       STDERR.printf "%s %10u %10.6f\n", clock.to_s, clock.repeat,
         clock.repeat / clock.total
     end
