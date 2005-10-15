@@ -187,7 +187,7 @@ module Bullshit
     def run(b)
       STDERR.printf "% -#{longest_name}s: ", b.short_name
       clock = Clock.repeat(self.class.duration) { __send__(b.name) }
-      STDERR.printf "%s %10u %10.6f\n", clock.to_s, clock.repeat,
+      STDERR.printf "%s %10u %12.6f\n", clock.to_s, clock.repeat,
         clock.repeat / clock.total
       #reporter.report(shorten(b), foo)
     end
@@ -209,7 +209,7 @@ module Bullshit
     def run(b)
       STDERR.printf "% -#{longest_name}s: ", b.short_name
       clock = Clock.stop(self.class.iterations) { __send__(b.name) }
-      STDERR.printf "%s %10u %10.6f\n", clock.to_s, clock.repeat,
+      STDERR.printf "%s %10u %12.6f\n", clock.to_s, clock.repeat,
         clock.repeat / clock.total
     end
   end
