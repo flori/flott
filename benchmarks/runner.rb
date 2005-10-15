@@ -2,8 +2,7 @@
 
 require 'bullshit'
 include Bullshit
+require 'benchmark_test.rb'
+#require 'benchmark_flott.rb'
 
-for b in Dir['[0-9]*_benchmark_*.rb']
-  require b
-end
 Case.run_all

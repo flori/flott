@@ -74,26 +74,29 @@ module Bullshit
       self.class.new(*TIMES.map { |t| __send__(t) / x })
     end
 
-    def to_s
-      "%10.6f %10.6f %10.6f %10.6f %10.6f %10.6f" %
-        [ real, total, utime, stime, cutime, cstime ]
-    end
-  end
-
-  class Reporter
-    def initialize(benchmark_case)
-      @benchmark_case = benchmark_case
+    def self.output_times
+      %w[ real total utime stime cutime cstime ]
     end
 
-    def report(name)
-      measure = 0.0
-      STDERR.printf "%#{@benchmark_case.longest_name}s:%s\n", name, measure
+    def self.header(bullshit_case)
+      result = ''
+      result << " " * (bullshit_case.longest_name + 1)
+      result << ("%11s" * 6) % output_times << "\n"
     end
-  end
-  
-  def process(indent)
-    reporter = Reporter.new(indent)
-    yield reporter
+
+    def self.footer(bullshit_case)
+      result = ''
+      result << " " * (bullshit_case.longest_name + 1)
+      result << "%11s %11s" % %w[calls calls/sec]
+    end
+    
+    def to_s(bullshit_case)
+      result = ''
+      result << ("%11.6f" * 6) % self.class.output_times.map { |t| __send__(t) }
+      result << "\n"
+      result << " " * (bullshit_case.longest_name + 1)
+      result << "%11u %11.6f" % [ repeat, repeat / total ]
+    end
   end
 
   class Case
@@ -119,21 +122,23 @@ module Bullshit
         cases.each(&block)
       end
 
-      def run_method(bc, bmethod)
-        bc.run(bmethod)
+      def run_method(bullshit_case, bmethod)
+        bullshit_case.run(bmethod)
       rescue => e
         STDERR.puts "Caught #{e.class}: #{([e] + e.backtrace) * "\n"}"
       ensure
-        bc.teardown
+        bullshit_case.teardown
       end
       
       def run_all
         each do |bc_klass|
-          bc = bc_klass.new
+          bullshit_case = bc_klass.new
           STDERR.puts bc_klass.message
-          bc.bmethods.each do |bmethod|
-            run_method(bc, bmethod)
+          STDERR.puts Clock.header(bullshit_case)
+          bullshit_case.bmethods.each do |bmethod|
+            run_method(bullshit_case, bmethod)
           end
+          STDERR.puts Clock.footer(bullshit_case)
           STDERR.puts
         end
       end
@@ -143,19 +148,32 @@ module Bullshit
       setup
     end
 
-    class CaseMethod < Struct.new(:name)
+    class CaseMethod < Struct.new(:name, :case)
       def short_name
         @short_name ||= name.sub(/^benchmark_/, '')
+      end
+
+      def setup_name
+        'setup_' + name
+      end
+
+      def teardown_name
+        'teardown_' + name
+      end
+
+      def prefix_string
+        "% -#{self.case.longest_name}s: " % short_name
       end
     end
 
     def bmethods
       @bmethods ||= methods.grep(/^benchmark_/).sort_by { rand }.map do |n|
-        CaseMethod.new(n)
+        CaseMethod.new(n, self)
       end
     end
 
     def longest_name
+      bmethods.empty? and return 0
       bmethods.max { |a, b|
         a.short_name.size <=> b.short_name.size
       }.short_name.size
@@ -164,8 +182,20 @@ module Bullshit
     def setup
     end
 
-    def run(*)
+    def pre_run(bmethod)
+      __send__(bmethod.setup_name) if respond_to? bmethod.setup_name
+      STDERR.print bmethod.prefix_string
     end
+
+    def run(bmethod)
+      pre_run(bmethod)
+      post_run(bmethod)
+    end
+
+    def post_run(bmethod)
+      __send__(bmethod.teardown_name) if respond_to? bmethod.teardown_name
+    end
+
     
     def teardown
     end
@@ -184,12 +214,12 @@ module Bullshit
       end
     end
     
-    def run(b)
-      STDERR.printf "% -#{longest_name}s: ", b.short_name
-      clock = Clock.repeat(self.class.duration) { __send__(b.name) }
-      STDERR.printf "%s %10u %12.6f\n", clock.to_s, clock.repeat,
-        clock.repeat / clock.total
-      #reporter.report(shorten(b), foo)
+    def run(bmethod)
+      pre_run(bmethod)
+      clock = Clock.repeat(self.class.duration) { __send__(bmethod.name) }
+      STDERR.puts clock.to_s(self)
+      post_run(bmethod)
+      #reporter.report(shorten(bmethod), foo)
     end
   end
 
@@ -206,11 +236,11 @@ module Bullshit
       end
     end
 
-    def run(b)
-      STDERR.printf "% -#{longest_name}s: ", b.short_name
-      clock = Clock.stop(self.class.iterations) { __send__(b.name) }
-      STDERR.printf "%s %10u %12.6f\n", clock.to_s, clock.repeat,
-        clock.repeat / clock.total
+    def run(bmethod)
+      pre_run(bmethod)
+      clock = Clock.stop(self.class.iterations) { __send__(bmethod.name) }
+      STDERR.puts clock.to_s(self)
+      post_run(bmethod)
     end
   end
 end

@@ -171,9 +171,13 @@ module Flott
     extend Delegate
 
     # Creates an Environment object, that outputs to _output_. The default
-    # ouput stream is STDOUT.
-    def initialize(output = STDOUT)
+    # ouput object is STDOUT, but any object that responds to #<< will do.
+    # _escape_ is a object that responds to #call (usually a Proc instance),
+    # and given a string, returns an escaped version of the string as an
+    # result. _escape_ defaults to Flott::Parser::HTML_ESCAPE.
+    def initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
       @output = output
+      @__escape__ = escape
     end
 
     # Calls EnvironmentExtension#initialize. This method should be calle
@@ -183,8 +187,11 @@ module Flott
       EnvironmentExtension.instance_method(:initialize).bind(self).call(output)
     end
 
-    # The output object for the Environment objects.
+    # The output object for this Environment object.
     attr_accessor :output
+
+    # The escape object for this Environment object.
+    attr_accessor :escape
 
     # Returns the root directory of this environment, it should be
     # constant during the whole evaluation.
@@ -273,7 +280,7 @@ module Flott
     # representations.
     def puts(*objects)
       objects.each do |o|
-        string = Flott::Parser.escape(o)
+        string = @__escape__.call(o)
         @output << string
         @output << "\n" unless string[-1] == ?\n
       end
@@ -288,14 +295,14 @@ module Flott
 
     # Print _objects_ after escaping all their String representations.
     def printf(format, *args)
-      @output << Flott::Parser.escape(sprintf(format, args))
+      @output << @__escape__.call(sprintf(format, args))
       nil
     end
 
     # The usual IO#print call without any escaping.
     def print!(*objects)
       objects.each do |o|
-        @output << Flott::Parser.escape(o)
+        @output << @__escape__.call(o)
       end
       nil
     end
@@ -318,7 +325,7 @@ module Flott
 
     # Call to IO#write after escaping the argument _object_.
     def write(object)
-      string = Flott::Parser.escape(object)
+      string = @__escape__.call(object)
       @output << string
       string.size
     end
@@ -578,7 +585,7 @@ module Flott
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << '@output<<Flott::Parser.escape(begin '
+          state.compiled << '@output<<@__escape__.call(begin '
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
           parser.goto_ruby_mode
@@ -689,9 +696,9 @@ module Flott
       false
     end
 
-    # This class method escapes _string_ in place,
-    # by substituting &<>" with their respective html entities.
-    def self.escape(string)
+    # This Proc object escapes _string_, by substituting &<>"' with
+    # their respective html entities, and returns the result.
+    HTML_ESCAPE = lambda do |string|
       string.to_s.gsub(/[&<>"']/) do |c|
         case c
         when '&' then '&amp;'
