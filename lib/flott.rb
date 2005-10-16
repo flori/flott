@@ -492,9 +492,11 @@ module Flott
     ESCCLOSE  =   /\\\]/
 
     # 
-    TEXT      =   /[^\\\]\[]+/
+    TEXT      =   /[^\\\]\[\{\}]+/
 
     ESC       =   /\\/
+
+    CURLY     =   /[{}]/
 
     # Creates a Parser object. _workdir_ is the directory, on which relative
     # template inclusions are based.
@@ -559,7 +561,7 @@ module Flott
     def compile
       @state = State.new
       state.compiled << [
-        "::Flott::Template.new { |env| env.instance_eval %q{\n",
+        "::Flott::Template.new \{ |__env__| __env__.instance_eval %q{\n",
         "@__rootdir__ = '#{rootdir}'\n",
       ]
       state.pathes << @filename if @filename
@@ -624,6 +626,8 @@ module Flott
         case
         when scanner.scan(ESCOPEN)
           state.text << '\\['
+        when scanner.scan(/\\\{/)
+          state.text << '\\{'
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
           parser.include_template(scanner[1])
@@ -650,6 +654,8 @@ module Flott
           state.text << '\\' << scanner[0]
         when scanner.scan(TEXT)
           state.text << scanner[0]
+        when scanner.scan(CURLY)
+          state.text << '\\' << scanner[0]
         when scanner.scan(ESC)
           state.text << '\\\\' << scanner[0]
         else
@@ -687,7 +693,7 @@ module Flott
         when scanner.scan(OPEN)
           state.opened += 1
           state.compiled << scanner[0]
-        when scanner.scan(TEXT)
+        when scanner.scan(TEXT), scanner.scan(/CURLY/)
           state.compiled << scanner[0]
         else
           raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
