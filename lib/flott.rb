@@ -121,9 +121,10 @@ module Flott
 
   # This module can be included into classes that should act as an environment
   # for Flott templates. An instance variable @__output__
-  # (EnvironmentExtension#output) should hold an output IO object. If no
-  # initialize method is defined in the including class,
-  # EnvironmentExtension#initialize uses STDOUT as this IO object.
+  # (EnvironmentExtension#output) should hold an output object, that responds
+  # to the #<< method, usually an IO object. If no initialize method is defined
+  # in the including class, EnvironmentExtension#initialize uses STDOUT as this
+  # _output_ object.
   #
   # If the class has its own initialize method, the environment can
   # be initialized with EnvironmentExtension#environment_initialize like

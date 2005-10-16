@@ -236,7 +236,7 @@ __EOT
   end
 
   def test_print
-    assert_template_equal %Q'AAA&lt;BBB&gt;CCC', 'AAA[write "<BBB>"]CCC'
+    assert_template_equal %Q'AAA&lt;BBB&gt;CCC', 'AAA[print "<BBB>"]CCC'
   end
 
   def test_write_bang
