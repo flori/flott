@@ -690,16 +690,6 @@ module Flott
       self
     end
 
-    # Returns true if the source template is well formed. (That means at the
-    # moment that brackets are balanced and all includes could be found.)
-    # Otherwise false is returned. However, this doesn't mean that the
-    # generated ruby code is bugfree or even valid.
-    def wellformed?
-      compile
-    rescue
-      false
-    end
-
     # This Proc object escapes _string_, by substituting &<>"' with
     # their respective html entities, and returns the result.
     HTML_ESCAPE = lambda do |string|
@@ -725,12 +715,6 @@ if $0 == __FILE__
   else
     Flott::Parser.new(STDIN.read)
   end
-  if parser.wellformed?
-    STDERR.puts 'ok'
-    exit 0
-  else
-    STDERR.puts 'not ok'
-    exit 1
-  end
+  parser.evaluate
 end
   # vim: set et sw=2 ts=2: 
