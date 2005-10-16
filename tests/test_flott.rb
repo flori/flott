@@ -38,6 +38,7 @@ class TC_Flott < Test::Unit::TestCase
     assert_template_equal "}", "}"
     assert_template_equal "{}}", "{}}"
     assert_template_equal "", "[lambda {}]"
+    assert_template_equal "foo", "[=lambda {:foo}.call]"
   end
 
   def test_fun
