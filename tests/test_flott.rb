@@ -185,11 +185,16 @@ __EOT
       env.instance_variables.sort
     assert_equal env[:foo], :foo
     assert_equal env[:@foo], :foo
-    env.update({ :bar => :bar })
+    env[:@bar] = :bar
     assert_equal ["@__escape__", "@__output__", "@bar", "@foo"].sort,
       env.instance_variables.sort
     assert_equal env[:bar], :bar
     assert_equal env[:@bar], :bar
+    env.update({ :baz => :baz })
+    assert_equal ["@__escape__", "@__output__", "@bar", "@baz", "@foo"].sort,
+      env.instance_variables.sort
+    assert_equal env[:baz], :baz
+    assert_equal env[:@baz], :baz
     assert_equal env[:__output__], output
     assert_equal env.output, output
   end
