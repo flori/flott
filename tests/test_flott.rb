@@ -37,8 +37,8 @@ class TC_Flott < Test::Unit::TestCase
  </body> ]
 </html>
 __EOT
-  @expected2 =<<__EOT
-    <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  @expected2 =<<__EOT.gsub(/: .*templates/, '')
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
    "http://www.w3.org/TR/html4/strict.dtd">
 <html>
  <head>
@@ -46,6 +46,7 @@ __EOT
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
  </head>
  <body>
+
 Workdir before (template2): /home/flori/cvs/ruby/flott/tests/templates
 Workdir 1 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
 Toplevel
@@ -146,14 +147,15 @@ __EOT
     env = Environment.new(output)
     tmpl = 'puts "\n"'
     assert Parser.new(tmpl).evaluate(env)
-    assert_equal(tmpl, output)
+    assert_equal tmpl, output
   end
 
   def test_dynamic_include
     output = ''
     env = Environment.new(output)
     @parser2.evaluate(env)
-    assert @expected2, output
+    output.gsub!(/: .*templates/, '')
+    assert_equal @expected2, output
   end
 
   def test_fun
