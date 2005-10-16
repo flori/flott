@@ -498,6 +498,8 @@ module Flott
 
     CURLY     =   /[{}]/
 
+    CURLYOPEN =   /\{/
+
     # Creates a Parser object. _workdir_ is the directory, on which relative
     # template inclusions are based.
     def initialize(source, workdir = nil)
@@ -626,7 +628,7 @@ module Flott
         case
         when scanner.scan(ESCOPEN)
           state.text << '\\['
-        when scanner.scan(/\\\{/)
+        when scanner.scan(CURLYOPEN)
           state.text << '\\{'
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN

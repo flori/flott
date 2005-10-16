@@ -36,6 +36,8 @@ class TC_Flott < Test::Unit::TestCase
     assert_template_equal "puts {'1', 2}", "puts {'1', [=1+1]}"
     assert_template_equal "lambda { |x| '", "lambda { |x| '"
     assert_template_equal "}", "}"
+    assert_template_equal "{}}", "{}}"
+    assert_template_equal "", "[lambda {}]"
   end
 
   def test_fun
