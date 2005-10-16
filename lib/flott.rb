@@ -176,13 +176,14 @@ module Flott
     def initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
       @__output__ = output
       @__escape__ = escape
+      environment_initialize(output, escape)
     end
 
-    # Calls EnvironmentExtension#initialize. This method should be calle
-    # from classes that include EnvironmentExtension to initialize the
-    # environment.
-    def environment_initialize(output = STDOUT)
-      EnvironmentExtension.instance_method(:initialize).bind(self).call(output)
+    # Calls EnvironmentExtension#initialize. This method should be called from
+    # classes that include EnvironmentExtension to initialize the environment.
+    def environment_initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
+      m = EnvironmentExtension.instance_method(:initialize).bind(self)
+      m.call(output, escape)
     end
 
     # The output object for this Environment object.
