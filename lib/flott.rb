@@ -183,23 +183,32 @@ module Flott
       hash.each { |name, value| self[name] = value }
     end
 
-    # Returns the instance variable _name_.
+    # Returns the instance variable _name_. The leading '@' can be omitted in
+    # _name_.
     def [](name)
       name = name.to_s
       name = "@#{name}" unless name[0] == ?@
       instance_variable_get name
     end
 
-    # Sets the instance variable _name_ to _value_.
+    # Sets the instance variable _name_ to _value_. The leading '@' can be
+    # omitted in _name_.
     def []=(name, value)
       name = name.to_s
       name = "@#{name}" unless name[0] == ?@
       instance_variable_set name, value
     end
 
-
     # Creates a function (actually, a singleton method) _id_ from the block
     # _block_ on this object.
+    #  [fun :fac do |n|
+    #    if n < 2
+    #      1
+    #    else
+    #      n * fac(n - 1)
+    #    end
+    #  end]
+    #  fac(10) = [=fac(10)]
     def function(id, &block)
       sc = class << self; self; end
       sc.instance_eval { define_method(id, &block) }
@@ -250,8 +259,8 @@ module Flott
       nil
     end
     
-    # Call to IO#puts to print _objects_ after escaping all their String
-    # representations.
+    # Like a call to IO#puts to print _objects_ after escaping all their #to_s
+    # call results.
     def puts(*objects)
       for o in objects
         string = @__escape__.call(o)
@@ -261,19 +270,19 @@ module Flott
       nil
     end
 
-    # The usual IO#printf call without any escaping.
+    # Like the usual IO#printf call without any escaping.
     def printf!(format, *args)
       @__output__ << sprintf(format, *args)
       nil
     end
 
-    # Print _objects_ after escaping all their String representations.
+    # Like a call to IO#printf, but with escaping the string before printing.
     def printf(format, *args)
       @__output__ << @__escape__.call(sprintf(format, *args))
       nil
     end
 
-    # The usual IO#print call without any escaping.
+    # Like the usual IO#print call without any escaping.
     def print!(*objects)
       for o in objects
         @__output__ << o.to_s
@@ -281,8 +290,8 @@ module Flott
       nil
     end
 
-    # Call to IO#print to print _objects_ after escaping all their String
-    # representations.
+    # Call to IO#print to print _objects_ after escaping all their #to_s
+    # call results.
     def print(*objects)
       for o in objects
         @__output__ << @__escape__.call(o)
@@ -290,14 +299,15 @@ module Flott
       nil
     end
 
-    # The usual IO#write call without any escaping.
+    # Like the usual IO#write call without any escaping.
     def write!(object)
       string = object.to_s
       @__output__ << string
       string.size
     end
 
-    # Call to IO#write after escaping the argument _object_.
+    # Call to IO#write after escaping the argument _object_'s #to_s call
+    # result.
     def write(object)
       string = @__escape__.call(object)
       @__output__ << string

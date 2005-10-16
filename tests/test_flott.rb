@@ -157,14 +157,14 @@ __EOT
 
   def test_fun
     assert_template_equal("\nAAA3628800BBB\n", <<__EOT)
-[fun :f do |n|
+[fun :fac do |n|
   if n < 2
     1
   else
-    n * f(n - 1)
+    n * fac(n - 1)
   end
 end]
-AAA[=f(10)]BBB
+AAA[=fac(10)]BBB
 __EOT
   end
 
