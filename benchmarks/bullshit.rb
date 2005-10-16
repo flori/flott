@@ -84,18 +84,18 @@ module Bullshit
       result << ("%11s" * 6) % output_times << "\n"
     end
 
-    def self.footer(bullshit_case)
-      result = ''
-      result << " " * (bullshit_case.longest_name + 1)
-      result << "%11s %11s" % %w[calls calls/sec]
-    end
-    
-    def to_s(bullshit_case)
+    def body(bullshit_case)
       result = ''
       result << ("%11.6f" * 6) % self.class.output_times.map { |t| __send__(t) }
       result << "\n"
       result << " " * (bullshit_case.longest_name + 1)
       result << "%11u %11.6f" % [ repeat, repeat / total ]
+    end
+
+    def self.footer(bullshit_case)
+      result = ''
+      result << " " * (bullshit_case.longest_name + 1)
+      result << "%11s %11s" % %w[calls calls/sec]
     end
   end
 
@@ -107,6 +107,8 @@ module Bullshit
       def inherited(klass)
         Case.cases << klass
       end
+
+      attr_accessor :rehearsal
     end
 
     class << self
@@ -129,17 +131,26 @@ module Bullshit
       ensure
         bullshit_case.teardown
       end
+
+      def run_bullshit_case(bc_klass, bullshit_case)
+        STDERR.puts bc_klass.message
+        STDERR.puts Clock.header(bullshit_case)
+        bullshit_case.bmethods.each do |bmethod|
+          run_method(bullshit_case, bmethod)
+        end
+        STDERR.puts Clock.footer(bullshit_case)
+        STDERR.puts "-" * 80
+      end
       
       def run_all
         each do |bc_klass|
           bullshit_case = bc_klass.new
-          STDERR.puts bc_klass.message
-          STDERR.puts Clock.header(bullshit_case)
-          bullshit_case.bmethods.each do |bmethod|
-            run_method(bullshit_case, bmethod)
+          if bc_klass.rehearsal
+            STDERR.puts "First run for rehearsal."
+            run_bullshit_case(bc_klass, bullshit_case)
           end
-          STDERR.puts Clock.footer(bullshit_case)
-          STDERR.puts
+          run_bullshit_case(bc_klass, bullshit_case)
+          STDERR.puts "=" * 80
         end
       end
     end
@@ -155,6 +166,10 @@ module Bullshit
 
       def setup_name
         'setup_' + name
+      end
+      
+      def reset_name
+        'reset_' + name
       end
 
       def teardown_name
@@ -174,9 +189,9 @@ module Bullshit
 
     def longest_name
       bmethods.empty? and return 0
-      bmethods.max { |a, b|
+      bmethods.max do |a, b|
         a.short_name.size <=> b.short_name.size
-      }.short_name.size
+      end.short_name.size
     end
 
     def setup
@@ -192,10 +207,20 @@ module Bullshit
       post_run(bmethod)
     end
 
+    def reset
+    end
+    
+    def reset_run(bmethod)
+      if respond_to? bmethod.reset_name
+        __send__(bmethod.reset_name)
+      else
+        reset
+      end
+    end
+
     def post_run(bmethod)
       __send__(bmethod.teardown_name) if respond_to? bmethod.teardown_name
     end
-
     
     def teardown
     end
@@ -216,8 +241,11 @@ module Bullshit
     
     def run(bmethod)
       pre_run(bmethod)
-      clock = Clock.repeat(self.class.duration) { __send__(bmethod.name) }
-      STDERR.puts clock.to_s(self)
+      clock = Clock.repeat(self.class.duration) do
+        __send__(bmethod.name)
+        reset_run(bmethod)
+      end
+      STDERR.puts clock.body(self)
       post_run(bmethod)
       #reporter.report(shorten(bmethod), foo)
     end
@@ -238,8 +266,11 @@ module Bullshit
 
     def run(bmethod)
       pre_run(bmethod)
-      clock = Clock.stop(self.class.iterations) { __send__(bmethod.name) }
-      STDERR.puts clock.to_s(self)
+      clock = Clock.stop(self.class.iterations) do
+        __send__(bmethod.name)
+        reset_run(bmethod)
+      end
+      STDERR.puts clock.body(self)
       post_run(bmethod)
     end
   end
