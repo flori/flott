@@ -583,12 +583,12 @@ module Flott
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << '@output<<@__escape__.call(begin '
+          state.compiled << "@output<<@__escape__.call(begin\n"
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << '@output<<(begin '
+          state.compiled << "@output<<(begin\n"
         when scanner.scan(COMOPEN)
           state.last_open = :COMOPEN
           parser.goto_ruby_mode
