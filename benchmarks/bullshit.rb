@@ -247,7 +247,6 @@ module Bullshit
       end
       STDERR.puts clock.body(self)
       post_run bmethod
-      #reporter.report(shorten(bmethod), foo)
     end
   end
 
