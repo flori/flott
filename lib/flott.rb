@@ -415,9 +415,9 @@ module Flott
       # Transform text mode parts to compiled code parts.
       def text2compiled
         return if text.empty?
-        compiled << %{@__output__<<'}
+        compiled << %{@__output__<<%[}
         compiled.concat(text)
-        compiled << "'\n"
+        compiled << "]\n"
         text.clear
       end
 
@@ -607,7 +607,7 @@ module Flott
       def scan
         case
         when scanner.scan(ESCOPEN)
-          state.text << '['
+          state.text << '\\['
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
           parser.include_template(scanner[1])
@@ -631,12 +631,12 @@ module Flott
           parser.goto_ruby_mode
           state.text2compiled
         when scanner.scan(CLOSE)
-          state.text << scanner[0]
+          state.text << '\\' << scanner[0]
         when scanner.scan(TEXT)
           #state.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
           state.text << scanner[0]
         when scanner.scan(ESC)
-          state.text << scanner[0]
+          state.text << '\\\\' << scanner[0]
         else
           raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
         end
@@ -682,9 +682,12 @@ module Flott
 
     def debug_output
       if Flott.debug
-        require 'pp'
-        pp([ @current_mode.class, state.last_open, state.opened,
-          state.compiled_string, state.directories, scanner.peek(20) ])
+        STDERR.printf "%-20s:%s\n", :mode, @current_mode.class
+        STDERR.printf "%-20s:%s\n", :last_open, state.last_open
+        STDERR.printf "%-20s:%s\n", :opened, state.opened
+        STDERR.printf "%-20s:%s\n", :directories, state.directories * ','
+        STDERR.printf "%-20s:%s\n", :peek, scanner.peek(60)
+        STDERR.printf "%-20s:%s\n", :compiled, state.compiled_string
       end
     end
     private :debug_output
