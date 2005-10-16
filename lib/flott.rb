@@ -415,7 +415,7 @@ module Flott
       # Transform text mode parts to compiled code parts.
       def text2compiled
         return if text.empty?
-        compiled << %{@__output__<<%[}
+        compiled << '@__output__<<%q['
         compiled.concat(text)
         compiled << "]\n"
         text.clear
@@ -633,7 +633,6 @@ module Flott
         when scanner.scan(CLOSE)
           state.text << '\\' << scanner[0]
         when scanner.scan(TEXT)
-          #state.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
           state.text << scanner[0]
         when scanner.scan(ESC)
           state.text << '\\\\' << scanner[0]
