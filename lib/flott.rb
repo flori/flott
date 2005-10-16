@@ -332,7 +332,7 @@ module Flott
       string.size
     end
 
-    # Call to IO#write after escaping the argument _object_'s #to_s call
+    # Like a call to IO#write after escaping the argument _object_'s #to_s call
     # result.
     def write(object)
       string = @__escape__.call(object)

@@ -47,12 +47,12 @@ class BC_FlottTime < Bullshit::TimeCase
     @flott.evaluate(@env)
   end
 
-  def setup_benchmark_flott2
+  def setup_benchmark_flott_e
     @env    = Environment.new(@output)
     @flott  = Parser.new( %'AAAAA[=Time.now]AAAAA' * LENGTH).compile
   end
 
-  def benchmark_flott2
+  def benchmark_flott_e
     @flott.evaluate(@env)
   end
 
@@ -70,6 +70,14 @@ class BC_FlottTime < Bullshit::TimeCase
     end
 
     def benchmark_kashmir
+      @output = @kashmir.expand(Object.new)
+    end
+
+    def setup_benchmark_kashmir_e
+      @kashmir = Kashmir.for_XML(%'AAAAA^(Time.now)AAAAA' * LENGTH)
+    end
+
+    def benchmark_kashmir_e
       @output = @kashmir.expand(Object.new)
     end
   end

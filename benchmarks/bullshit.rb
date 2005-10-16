@@ -235,7 +235,7 @@ module Bullshit
       attr_reader :duration
 
       def message
-        "Running '#{self}' for a duration of #{duration} secs:"
+        "Running '#{self}' for a duration of #{duration} secs per method:"
       end
     end
     
@@ -260,7 +260,7 @@ module Bullshit
       attr_reader :iterations
 
       def message
-        "Running '#{self}' for #{iterations} iterations:"
+        "Running '#{self}' for #{iterations} iterations per method:"
       end
     end
 
