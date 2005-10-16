@@ -37,7 +37,7 @@ class TC_Flott < Test::Unit::TestCase
  </body> ]
 </html>
 __EOT
-  @expected2 =<<__EOT.gsub(/: .*templates/, '')
+  @expected2 =<<__EOT.gsub(/: .*templates/, ': @{prefix}')
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
    "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -47,24 +47,24 @@ __EOT
  </head>
  <body>
 
-Workdir before (template2): /home/flori/cvs/ruby/flott/tests/templates
-Workdir 1 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir before (template2): @{prefix}
+Workdir 1 (included): @{prefix}/subdir
 Toplevel
-Workdir (toplevel): /home/flori/cvs/ruby/flott/tests/templates
+Workdir (toplevel): @{prefix}
 
-Workdir 2 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
-Workdir (included2): /home/flori/cvs/ruby/flott/tests/templates/subdir/subdir2
+Workdir 2 (included): @{prefix}/subdir
+Workdir (included2): @{prefix}/subdir/subdir2
 
-Workdir 3 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
-Workdir (included3): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir 3 (included): @{prefix}/subdir
+Workdir (included3): @{prefix}/subdir
 
-Workdir 4 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir 4 (included): @{prefix}/subdir
 Toplevel
-Workdir (toplevel): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir (toplevel): @{prefix}/subdir
 
-Workdir 5 (included): /home/flori/cvs/ruby/flott/tests/templates/subdir
+Workdir 5 (included): @{prefix}/subdir
 
-Workdir after (template2): /home/flori/cvs/ruby/flott/tests/templates
+Workdir after (template2): @{prefix}
 </body>
 </html>
 __EOT
@@ -154,7 +154,7 @@ __EOT
     output = ''
     env = Environment.new(output)
     @parser2.evaluate(env)
-    output.gsub!(/: .*templates/, '')
+    output.gsub!(/: .*templates/, ': @{prefix}')
     assert_equal @expected2, output
   end
 
