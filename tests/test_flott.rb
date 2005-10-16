@@ -200,5 +200,11 @@ __EOT
       super
     end
   end
+
+  def test_my_environment
+    env = MyEnvironment.new
+    assert_kind_of Array, env
+    assert_kind_of Flott::EnvironmentExtension, env
+  end
 end
   # vim: set et sw=2 ts=2:
