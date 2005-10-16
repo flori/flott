@@ -75,27 +75,27 @@ module Bullshit
     end
 
     def self.output_times
-      %w[ real total utime stime cutime cstime ]
+      %w[real total utime stime cutime cstime]
     end
 
     def self.header(bullshit_case)
       result = ''
-      result << " " * (bullshit_case.longest_name + 1)
-      result << ("%11s" * 6) % output_times << "\n"
+      result << ' ' * (bullshit_case.longest_name + 1)
+      result << ('%11s' * 6) % output_times << "\n"
     end
 
     def body(bullshit_case)
       result = ''
-      result << ("%11.6f" * 6) % self.class.output_times.map { |t| __send__(t) }
+      result << ('%11.6f' * 6) % self.class.output_times.map { |t| __send__(t) }
       result << "\n"
-      result << " " * (bullshit_case.longest_name + 1)
-      result << "%11u %11.6f" % [ repeat, repeat / total ]
+      result << ' ' * (bullshit_case.longest_name + 1)
+      result << '%11u %11.6f' % [ repeat, repeat / total ]
     end
 
     def self.footer(bullshit_case)
       result = ''
-      result << " " * (bullshit_case.longest_name + 1)
-      result << "%11s %11s" % %w[calls calls/sec]
+      result << ' ' * (bullshit_case.longest_name + 1)
+      result << '%11s %11s' % %w[calls calls/sec]
     end
   end
 
@@ -125,7 +125,7 @@ module Bullshit
       end
 
       def run_method(bullshit_case, bmethod)
-        bullshit_case.run(bmethod)
+        bullshit_case.run bmethod
       rescue => e
         STDERR.puts "Caught #{e.class}: #{([e] + e.backtrace) * "\n"}"
       ensure
@@ -139,7 +139,7 @@ module Bullshit
           run_method(bullshit_case, bmethod)
         end
         STDERR.puts Clock.footer(bullshit_case)
-        STDERR.puts "-" * 80
+        STDERR.puts '-' * 80
       end
       
       def run_all
@@ -150,7 +150,7 @@ module Bullshit
             run_bullshit_case(bc_klass, bullshit_case)
           end
           run_bullshit_case(bc_klass, bullshit_case)
-          STDERR.puts "=" * 80
+          STDERR.puts '=' * 80
         end
       end
     end
@@ -197,14 +197,14 @@ module Bullshit
     def setup
     end
 
-    def pre_run(bmethod)
+    def pre_run bmethod
       __send__(bmethod.setup_name) if respond_to? bmethod.setup_name
       STDERR.print bmethod.prefix_string
     end
 
-    def run(bmethod)
-      pre_run(bmethod)
-      post_run(bmethod)
+    def run bmethod
+      pre_run bmethod
+      post_run bmethod
     end
 
     def reset
@@ -240,13 +240,13 @@ module Bullshit
     end
     
     def run(bmethod)
-      pre_run(bmethod)
+      pre_run bmethod
       clock = Clock.repeat(self.class.duration) do
         __send__(bmethod.name)
-        reset_run(bmethod)
+        reset_run bmethod
       end
       STDERR.puts clock.body(self)
-      post_run(bmethod)
+      post_run bmethod
       #reporter.report(shorten(bmethod), foo)
     end
   end
@@ -265,13 +265,13 @@ module Bullshit
     end
 
     def run(bmethod)
-      pre_run(bmethod)
+      pre_run bmethod
       clock = Clock.stop(self.class.iterations) do
         __send__(bmethod.name)
-        reset_run(bmethod)
+        reset_run bmethod
       end
       STDERR.puts clock.body(self)
-      post_run(bmethod)
+      post_run bmethod
     end
   end
 end

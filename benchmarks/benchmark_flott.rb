@@ -47,12 +47,12 @@ class BC_FlottTime < Bullshit::TimeCase
     @flott.evaluate(@env)
   end
 
-  def setup_benchmark_flott_escaped
+  def setup_benchmark_flott2
     @env    = Environment.new(@output)
     @flott  = Parser.new( %'AAAAA[=Time.now]AAAAA' * LENGTH).compile
   end
 
-  def benchmark_flott_escaped
+  def benchmark_flott2
     @flott.evaluate(@env)
   end
 
