@@ -191,5 +191,14 @@ __EOT
     assert_equal env[:__output__], output
     assert_equal env.output, output
   end
+
+  class MyEnvironment < Array
+    include Flott::EnvironmentExtension
+
+    def initialize(*)
+      environment_initialize
+      super
+    end
+  end
 end
   # vim: set et sw=2 ts=2:

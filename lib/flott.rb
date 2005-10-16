@@ -176,7 +176,6 @@ module Flott
     def initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
       @__output__ = output
       @__escape__ = escape
-      environment_initialize(output, escape)
     end
 
     # Calls EnvironmentExtension#initialize. This method should be called from
