@@ -525,7 +525,7 @@ module Flott
       raise EvalError.wrap(e)
     end
 
-    # Include the template _filename_ at the current place 
+    # Include the template file with _filename_ at the current place.
     def include_template(filename)
       filename = interpret_filename(filename)
       if File.readable?(filename)
