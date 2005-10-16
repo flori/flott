@@ -255,7 +255,7 @@ module Flott
     
     # Kernel#p redirected to @__output__.
     def p(*objects)
-      objects.each do |o|
+      for o in objects
         string = o.inspect 
         @__output__ << string
         @__output__ << "\n" unless string[-1] == ?\n
@@ -266,13 +266,15 @@ module Flott
     # Kernel#pp redirected to @__output__.
     def pp(*objects)
       require 'pp'
-      objects.each { |o| PP.pp(o, @__output__) }
+      for o in objects
+        PP.pp(o, @__output__)
+      end
       nil
     end
 
     # The usual IO#puts call without any escaping.
     def puts!(*objects)
-      objects.each do |o|
+      for o in objects
         string = o.to_s
         @__output__ << string
         @__output__ << "\n" unless string[-1] == ?\n
@@ -283,7 +285,7 @@ module Flott
     # Call to IO#puts to print _objects_ after escaping all their String
     # representations.
     def puts(*objects)
-      objects.each do |o|
+      for o in objects
         string = @__escape__.call(o)
         @__output__ << string
         @__output__ << "\n" unless string[-1] == ?\n
@@ -305,7 +307,7 @@ module Flott
 
     # The usual IO#print call without any escaping.
     def print!(*objects)
-      objects.each do |o|
+      for o in objects
         @__output__ << @__escape__.call(o)
       end
       nil
@@ -314,7 +316,7 @@ module Flott
     # Call to IO#print to print _objects_ after escaping all their String
     # representations.
     def print(*objects)
-      objects.each do |o|
+      for o in objects
         @__output__ << o.to_s
       end
       nil
@@ -358,8 +360,9 @@ module Flott
       @pathes.map { |path| File.stat(path).mtime }.max
     end
 
-    # Evaluates this Template Object in the Environment (first argument).
-    def call(*)
+    # Evaluates this Template Object in the Environment _environment_ (first
+    # argument).
+    def call(environment, *)
       super
     rescue SyntaxError => e
       raise CallError.wrap(e)
@@ -443,15 +446,34 @@ module Flott
 
     include Flott::FilenameMixin
 
+    # Regexp matching an escaped open square bracket like '\['.
     ESCOPEN   =   /\\\[/
+    
+    # [<filename] XXX allow ] in filenames?
     INCOPEN   =   /\[<\s*([^\]]+)\s*\]/
+
+    # [="foo<bar"] "foo&lt;bar"
     PRIOPEN   =   /\[=\s*/
+
+    # [!"foo<bar"] "foo<bar"
     RAWOPEN   =   /\[!\s*/
+
+    # [#comment]
     COMOPEN   =   /\[#\s*/
+
+
+    # Regexp matching an open square bracket like '['.
     OPEN      =   /\[/
+
+    # Regexp matching an open square bracket like ']'.
     CLOSE     =   /\]/
+
+    # Regexp matching an escaped closed square bracket like '\]'.
     ESCCLOSE  =   /\\\]/
+
+    # 
     TEXT      =   /[^\\\]\[]+/
+
     ESC       =   /\\/
 
     # Creates a Parser object. _workdir_ is the directory, on which relative

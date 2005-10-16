@@ -82,16 +82,8 @@ __EOT
     assert @parser.compile
   end
 
-  def test_wellformed
-    assert @parser.wellformed?
-  end
-
   def test_compile2
     assert @parser2.compile
-  end
-
-  def test_wellformed2
-    assert @parser2.wellformed?
   end
 
   def test_execute
