@@ -102,39 +102,6 @@ module Flott
   # calling the evaluated Proc object.
   class CallError < ParserError; end
 
-  # This module contains methods to make delegation easier, if
-  # a class/module was extended with it.
-  module Delegate
-    # A method to easily delegate methods to an object, stored in an
-    # instance variable, or to an object return by a method call. It's
-    # used like this:
-    #   class A
-    #     extend Delegate
-    #     delegate :method_here1, :@obj
-    #     delegate :method_here2, :@obj,        :method_there2
-    #     delegate :method_here3, :method_call, :method_there3
-    #   end
-    def delegate(method_name, obj, other_method_name = method_name)
-      raise ArgumentError, "obj wasn't defined" unless obj
-      obj = obj.to_s
-      if obj[0] == ?@
-        class_eval <<-EOS
-          def #{method_name}(*args, &block)
-            instance_variable_get('#{obj}').__send__(
-              '#{other_method_name}', *args, &block)
-          end
-        EOS
-      else
-        class_eval <<-EOS
-          def #{method_name}(*args, &block)
-            __send__('#{obj}').__send__(
-              '#{other_method_name}', *args, &block)
-          end
-        EOS
-      end
-    end
-  end
-
   # This module contains methods to interpret filenames of the templates.
   module FilenameMixin
     # Interpret filename for included templates. Beginning with '/' is the root
@@ -295,20 +262,20 @@ module Flott
 
     # The usual IO#printf call without any escaping.
     def printf!(format, *args)
-      @__output__ << sprintf(format, args)
+      @__output__ << sprintf(format, *args)
       nil
     end
 
     # Print _objects_ after escaping all their String representations.
     def printf(format, *args)
-      @__output__ << @__escape__.call(sprintf(format, args))
+      @__output__ << @__escape__.call(sprintf(format, *args))
       nil
     end
 
     # The usual IO#print call without any escaping.
     def print!(*objects)
       for o in objects
-        @__output__ << @__escape__.call(o)
+        @__output__ << o.to_s
       end
       nil
     end
@@ -317,14 +284,14 @@ module Flott
     # representations.
     def print(*objects)
       for o in objects
-        @__output__ << o.to_s
+        @__output__ << @__escape__.call(o)
       end
       nil
     end
 
     # The usual IO#write call without any escaping.
     def write!(object)
-      string object.to_s
+      string = object.to_s
       @__output__ << string
       string.size
     end
@@ -377,8 +344,6 @@ module Flott
     # This class encapsulates the state, that is shared by all parsers
     # that were activated during the parse phase.
     class State
-      extend Delegate
-
       # Creates a new Flott::Parser::State instance to hold the current
       # parser state.
       def initialize
@@ -433,7 +398,9 @@ module Flott
       end
 
       # Returns the top directory from the _directories_ stack.
-      delegate :top_workdir, :directories, :last
+      def top_workdir
+        directories.last
+      end
 
       # Pops the top directory from the _directories_ stack.
       def pop_workdir

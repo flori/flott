@@ -73,6 +73,15 @@ __EOT
     @parser2 = Parser.from_filename(File.join(workdir, 'template2'))
   end
 
+  def assert_template_equal(expected, template, hash = {})
+    output = ''
+    env = Environment.new(output)
+    env.update hash
+    parser = Parser.new(template)
+    parser.evaluate(env)
+    assert_equal expected, output
+  end
+
   def test_kind
     assert_kind_of Parser, @parser
     assert_kind_of Parser, @parser2
@@ -135,11 +144,7 @@ __EOT
   end
 
   def test_for_errors
-    output = ''
-    env = Environment.new(output)
-    tmpl = 'puts "\n"'
-    assert Parser.new(tmpl).evaluate(env)
-    assert_equal tmpl, output
+    assert_template_equal 'puts "\n"', 'puts "\n"'
   end
 
   def test_dynamic_include
@@ -151,9 +156,7 @@ __EOT
   end
 
   def test_fun
-    output = ''
-    env = Environment.new(output)
-    parser = Parser.new(<<__EOT)
+    assert_template_equal("\nAAA3628800BBB\n", <<__EOT)
 [fun :f do |n|
   if n < 2
     1
@@ -161,10 +164,8 @@ __EOT
     n * f(n - 1)
   end
 end]
-[=f(10)]
+AAA[=f(10)]BBB
 __EOT
-    parser.evaluate(env)
-    assert_equal "\n3628800\n", output
   end
 
   def test_environment_instance_variables
@@ -204,6 +205,46 @@ __EOT
     env = MyEnvironment.new
     assert_kind_of Array, env
     assert_kind_of Flott::EnvironmentExtension, env
+  end
+
+  def test_p
+    assert_template_equal %Q'AAA[1, :foo, "bar"]\nBBB', 'AAA[p [1, :foo, "bar"]]BBB'
+  end
+
+  def test_pp
+    assert_template_equal %Q'AAA[1, :foo, "bar"]\nBBB', 'AAA[pp [1, :foo, "bar"]]BBB'
+  end
+
+  def test_puts_bang
+    assert_template_equal %Q'AAA<BBB>\nCCC', 'AAA[puts! "<BBB>"]CCC'
+  end
+
+  def test_puts
+    assert_template_equal %Q'AAA&lt;BBB&gt;\nCCC', 'AAA[puts "<BBB>"]CCC'
+  end
+
+  def test_printf_bang
+    assert_template_equal %Q'AAA<B42BB>CCC', 'AAA[printf! "<B%xBB>", 66]CCC'
+  end
+
+  def test_printf
+    assert_template_equal %Q'AAA&lt;B42BB&gt;CCC', 'AAA[printf "<B%xBB>", 66]CCC'
+  end
+
+  def test_print_bang
+    assert_template_equal %Q'AAA<BBB>CCC', 'AAA[print! "<BBB>"]CCC'
+  end
+
+  def test_print
+    assert_template_equal %Q'AAA&lt;BBB&gt;CCC', 'AAA[write "<BBB>"]CCC'
+  end
+
+  def test_write_bang
+    assert_template_equal %Q'AAA<BBB>CCC', 'AAA[write! "<BBB>"]CCC'
+  end
+
+  def test_write
+    assert_template_equal %Q'AAA&lt;BBB&gt;CCC', 'AAA[write "<BBB>"]CCC'
   end
 end
   # vim: set et sw=2 ts=2:
