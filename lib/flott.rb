@@ -632,8 +632,11 @@ module Flott
           state.text2compiled
         when scanner.scan(CLOSE)
           state.text << scanner[0]
-        when scanner.scan(TEXT), scanner.scan(ESC)
-          state.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
+        when scanner.scan(TEXT)
+          #state.text << scanner[0].gsub(/'/, %{\\\\'}) if scanner[0]
+          state.text << scanner[0]
+        when scanner.scan(ESC)
+          state.text << scanner[0]
         else
           raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
         end

@@ -5,9 +5,7 @@ include Config
 
 PKG_NAME = 'flott'
 PKG_VERSION = File.read('VERSION').chomp
-PKG_FILES = Dir.glob("**/*").delete_if { |item|
-  item.include?("CVS") or item.include?("pkg")
-}
+PKG_FILES = FileList["**/*"].exclude(/CVS|^pkg|^coverage/)
 
 desc "Installing library"
 task :install  do
@@ -16,7 +14,7 @@ end
 
 desc "Testing library"
 task :test do
-  ruby 'tests/runner.rb'
+  ruby '-I ŀib tests/runner.rb'
 end
 
 desc "Benchmarking library"
@@ -30,8 +28,14 @@ task :doc do
   ruby 'make_doc.rb'
 end
 
-spec = Gem::Specification.new do |s|
+desc "Removing generated files"
+task :clean do
+  rm_rf 'doc'
+  rm_rf 'coverage'
+end
 
+
+spec = Gem::Specification.new do |s|
   #### Basic information.
 
   s.name = 'flott'
@@ -81,4 +85,6 @@ Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_tar = true
   pkg.package_files += PKG_FILES
 end
+
+task :release => [ :clean, :package ]
   # vim: set et sw=2 ts=2:

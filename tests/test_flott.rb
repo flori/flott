@@ -145,6 +145,7 @@ __EOT
 
   def test_for_errors
     assert_template_equal 'puts "\n"', 'puts "\n"'
+    assert_template_equal "puts [1, 2, '3']", "puts \[1, 2, '3']"
   end
 
   def test_dynamic_include
