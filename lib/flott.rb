@@ -618,9 +618,9 @@ module Flott
           parser.goto_text_mode
           case state.last_open
           when :PRIOPEN
-            state.compiled << " end)\n"
+            state.compiled << "\nend)\n"
           when :RAWOPEN
-            state.compiled << " end.to_s)\n"
+            state.compiled << "\nend.to_s)\n"
           when :COMOPEN
             state.compiled << "\n=end\n"
           else
