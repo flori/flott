@@ -9,7 +9,6 @@ class TC_Flott < Test::Unit::TestCase
   Flott.debug = false
 
   def setup
-    @output = StringIO.new('')
     @expected =<<__EOT
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
    "http://www.w3.org/TR/html4/strict.dtd">
@@ -95,33 +94,36 @@ __EOT
   end
 
   def test_execute
-    env = Environment.new(@output)
+    output = StringIO.new('')
+    env = Environment.new(output)
     env[:name] = 'Flor<i>an'
     @parser.evaluate(env) 
-    assert_equal(@expected, @output.string)
-    @output.rewind
+    assert_equal(@expected, output.string)
+    output.rewind
     @parser.evaluate(env) 
-    assert_equal(@expected, @output.string)
+    assert_equal(@expected, output.string)
   end
 
   def test_compile_evaluate
-    env = Environment.new(@output)
+    output = StringIO.new('')
+    env = Environment.new(output)
     env[:@name] = 'Flor<i>an'
     compiled = @parser.compile
     Parser.evaluate(compiled, env)
-    assert_equal(@expected, @output.string)
-    @output.rewind
+    assert_equal(@expected, output.string)
+    output.rewind
     Parser.evaluate(compiled, env)
-    assert_equal(@expected, @output.string)
+    assert_equal(@expected, output.string)
   end
 
   def test_execute2
-    env = Environment.new(@output)
+    output = StringIO.new('')
+    env = Environment.new(output)
     @parser2.evaluate(env)
-    assert_match /Toplevel/, @output.string
-    @output.rewind
+    assert_match /Toplevel/, output.string
+    output.rewind
     @parser2.evaluate(env)
-    assert_match /Toplevel/, @output.string
+    assert_match /Toplevel/, output.string
   end
 
   def test_error
@@ -139,17 +141,55 @@ __EOT
     end
   end
 
-  def test_errors
-    env = Environment.new(@output)
+  def test_for_errors
+    output = ''
+    env = Environment.new(output)
     tmpl = 'puts "\n"'
     assert Parser.new(tmpl).evaluate(env)
-    assert_equal(tmpl, @output.string)
+    assert_equal(tmpl, output)
   end
 
   def test_dynamic_include
-    env = Environment.new(@output)
+    output = ''
+    env = Environment.new(output)
     @parser2.evaluate(env)
-    assert @expected2, @output.string
+    assert @expected2, output
+  end
+
+  def test_fun
+    output = ''
+    env = Environment.new(output)
+    parser = Parser.new(<<__EOT)
+[fun :f do |n|
+  if n < 2
+    1
+  else
+    n * f(n - 1)
+  end
+end]
+[=f(10)]
+__EOT
+    parser.evaluate(env)
+    assert_equal "\n3628800\n", output
+  end
+
+  def test_environment_instance_variables
+    env = Environment.new
+    env.output = output = ''
+    assert_equal ["@__escape__", "@__output__"].sort,
+      env.instance_variables.sort
+    env[:foo] = :foo
+    assert_equal ["@__escape__", "@__output__", "@foo"].sort,
+      env.instance_variables.sort
+    assert_equal env[:foo], :foo
+    assert_equal env[:@foo], :foo
+    env.update({ :bar => :bar })
+    assert_equal ["@__escape__", "@__output__", "@bar", "@foo"].sort,
+      env.instance_variables.sort
+    assert_equal env[:bar], :bar
+    assert_equal env[:@bar], :bar
+    assert_equal env[:__output__], output
+    assert_equal env.output, output
   end
 end
   # vim: set et sw=2 ts=2:

@@ -153,7 +153,7 @@ module Flott
   end
 
   # This module can be included into classes that should act as an environment
-  # for Flott templates. An instance variable @output
+  # for Flott templates. An instance variable @__output__
   # (EnvironmentExtension#output) should hold an output IO object. If no
   # initialize method is defined in the including class,
   # EnvironmentExtension#initialize uses STDOUT as this IO object.
@@ -174,7 +174,7 @@ module Flott
     # and given a string, returns an escaped version of the string as an
     # result. _escape_ defaults to Flott::Parser::HTML_ESCAPE.
     def initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
-      @output = output
+      @__output__ = output
       @__escape__ = escape
     end
 
@@ -186,7 +186,13 @@ module Flott
     end
 
     # The output object for this Environment object.
-    attr_accessor :output
+    def output
+      @__output__
+    end
+    
+    def output=(output)
+      @__output__ = output
+    end
 
     # The escape object for this Environment object.
     attr_accessor :escape
@@ -247,20 +253,20 @@ module Flott
       print "[dynamic include of '#{filename}' failed]"
     end
     
-    # Kernel#p redirected to @output.
+    # Kernel#p redirected to @__output__.
     def p(*objects)
       objects.each do |o|
         string = o.inspect 
-        @output << string
-        @output << "\n" unless string[-1] == ?\n
+        @__output__ << string
+        @__output__ << "\n" unless string[-1] == ?\n
       end
       nil
     end
 
-    # Kernel#pp redirected to @output.
+    # Kernel#pp redirected to @__output__.
     def pp(*objects)
       require 'pp'
-      objects.each { |o| PP.pp(o, @output) }
+      objects.each { |o| PP.pp(o, @__output__) }
       nil
     end
 
@@ -268,8 +274,8 @@ module Flott
     def puts!(*objects)
       objects.each do |o|
         string = o.to_s
-        @output << string
-        @output << "\n" unless string[-1] == ?\n
+        @__output__ << string
+        @__output__ << "\n" unless string[-1] == ?\n
       end
       nil
     end
@@ -279,28 +285,28 @@ module Flott
     def puts(*objects)
       objects.each do |o|
         string = @__escape__.call(o)
-        @output << string
-        @output << "\n" unless string[-1] == ?\n
+        @__output__ << string
+        @__output__ << "\n" unless string[-1] == ?\n
       end
       nil
     end
 
     # The usual IO#printf call without any escaping.
     def printf!(format, *args)
-      @output << sprintf(format, args)
+      @__output__ << sprintf(format, args)
       nil
     end
 
     # Print _objects_ after escaping all their String representations.
     def printf(format, *args)
-      @output << @__escape__.call(sprintf(format, args))
+      @__output__ << @__escape__.call(sprintf(format, args))
       nil
     end
 
     # The usual IO#print call without any escaping.
     def print!(*objects)
       objects.each do |o|
-        @output << @__escape__.call(o)
+        @__output__ << @__escape__.call(o)
       end
       nil
     end
@@ -309,7 +315,7 @@ module Flott
     # representations.
     def print(*objects)
       objects.each do |o|
-        @output << o.to_s
+        @__output__ << o.to_s
       end
       nil
     end
@@ -317,14 +323,14 @@ module Flott
     # The usual IO#write call without any escaping.
     def write!(object)
       string object.to_s
-      @output << string
+      @__output__ << string
       string.size
     end
 
     # Call to IO#write after escaping the argument _object_.
     def write(object)
       string = @__escape__.call(object)
-      @output << string
+      @__output__ << string
       string.size
     end
   end
@@ -404,7 +410,7 @@ module Flott
       # Transform text mode parts to compiled code parts.
       def text2compiled
         return if text.empty?
-        compiled << %{@output<<'}
+        compiled << %{@__output__<<'}
         compiled.concat(text)
         compiled << "'\n"
         text.clear
@@ -583,12 +589,12 @@ module Flott
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << "@output<<@__escape__.call(begin\n"
+          state.compiled << "@__output__<<@__escape__.call(begin\n"
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << "@output<<(begin\n"
+          state.compiled << "@__output__<<(begin\n"
         when scanner.scan(COMOPEN)
           state.last_open = :COMOPEN
           parser.goto_ruby_mode
