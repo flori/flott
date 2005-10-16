@@ -153,11 +153,14 @@ module Flott
       m.call(output, escape)
     end
 
-    # The output object for this Environment object.
+    # The output object for this Environment object. It should respond to the
+    # #<< method of appending strings.
     def output
       @__output__
     end
     
+    # Sets the output object for this Environment object, to _output_. It
+    # should respond to the #<< method of appending strings.
     def output=(output)
       @__output__ = output
     end
@@ -200,8 +203,8 @@ module Flott
     end
 
     # Creates a function (actually, a singleton method) _id_ from the block
-    # _block_ on this object.
-    #  [fun :fac do |n|
+    # _block_ on this object, that can be called later in the template:
+    #  [function :fac do |n|
     #    if n < 2
     #      1
     #    else
@@ -230,21 +233,44 @@ module Flott
       print "[dynamic include of '#{filename}' failed]"
     end
     
-    # Kernel#p redirected to @__output__.
+    # Like Kernel#p but with escaping.
     def p(*objects)
       for o in objects
-        string = o.inspect 
+        string = @__escape__.call(o.inspect)
         @__output__ << string
         @__output__ << "\n" unless string[-1] == ?\n
       end
       nil
     end
 
-    # Kernel#pp redirected to @__output__.
+    def p!(*objects)
+      for o in objects
+        string = o.inspect
+        @__output__ << string
+        @__output__ << "\n" unless string[-1] == ?\n
+      end
+      nil
+    end
+
+    # Like Kernel#pp but with escaping.
     def pp(*objects)
       require 'pp'
       for o in objects
-        PP.pp(o, @__output__)
+        string = ''
+        PP.pp(o, string)
+        @__output__ << @__escape__.call(string)
+        @__output__ << "\n" unless string[-1] == ?\n
+      end
+      nil
+    end
+
+    def pp!(*objects)
+      require 'pp'
+      for o in objects
+        string = ''
+        PP.pp(o, string)
+        @__output__ << string
+        @__output__ << "\n" unless string[-1] == ?\n
       end
       nil
     end

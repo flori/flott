@@ -208,11 +208,19 @@ __EOT
   end
 
   def test_p
-    assert_template_equal %Q'AAA[1, :foo, "bar"]\nBBB', 'AAA[p [1, :foo, "bar"]]BBB'
+    assert_template_equal %Q'AAA[1, :foo, &quot;bar&quot;]\nBBB', 'AAA[p [1, :foo, "bar"]]BBB'
+  end
+
+  def test_p_bang
+    assert_template_equal %Q'AAA[1, :foo, "bar"]\nBBB', 'AAA[p! [1, :foo, "bar"]]BBB'
   end
 
   def test_pp
-    assert_template_equal %Q'AAA[1, :foo, "bar"]\nBBB', 'AAA[pp [1, :foo, "bar"]]BBB'
+    assert_template_equal %Q'AAA[1, :foo, &quot;bar&quot;]\nBBB', 'AAA[pp [1, :foo, "bar"]]BBB'
+  end
+
+  def test_pp_bang
+    assert_template_equal %Q'AAA[1, :foo, "bar"]\nBBB', 'AAA[pp! [1, :foo, "bar"]]BBB'
   end
 
   def test_puts_bang
