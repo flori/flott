@@ -296,6 +296,22 @@ module Flott
       nil
     end
 
+    def putc!(object)
+      if object.is_a? Numeric
+        @__output__ << object.chr
+      else
+        @__output__ << object.to_s
+      end
+    end
+
+    def putc(object)
+      if object.is_a? Numeric
+        @__output__ << @__escape__.call(object.chr)
+      else
+        @__output__ << @__escape__.call(object)
+      end
+    end
+
     # Like the usual IO#printf call without any escaping.
     def printf!(format, *args)
       @__output__ << sprintf(format, *args)
