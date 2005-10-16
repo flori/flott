@@ -300,7 +300,7 @@ module Flott
       if object.is_a? Numeric
         @__output__ << object.chr
       else
-        @__output__ << object.to_s[0]
+        @__output__ << object.to_s[0, 1]
       end
     end
 
@@ -308,7 +308,7 @@ module Flott
       if object.is_a? Numeric
         @__output__ << @__escape__.call(object.chr)
       else
-        @__output__ << @__escape__.call(object[0])
+        @__output__ << @__escape__.call(object[0, 1])
       end
     end
 
