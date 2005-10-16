@@ -116,6 +116,16 @@ __EOT
     assert_template_equal %Q'AAA&lt;BBB&gt;\nCCC', 'AAA[puts "<BBB>"]CCC'
   end
 
+  def test_putc_bang
+    assert_template_equal %Q'AAA<CCC', 'AAA[putc! "<BBB>"]CCC'
+    assert_template_equal %Q'AAA<CCC', 'AAA[putc! ?<]CCC'
+  end
+
+  def test_putc
+    assert_template_equal %Q'AAA&lt;CCC', 'AAA[putc "<BBB>"]CCC'
+    assert_template_equal %Q'AAA&lt;CCC', 'AAA[putc ?<]CCC'
+  end
+
   def test_printf_bang
     assert_template_equal %Q'AAA<B42BB>CCC', 'AAA[printf! "<B%xBB>", 66]CCC'
   end
