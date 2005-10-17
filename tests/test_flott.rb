@@ -52,9 +52,10 @@ class TC_Flott < Test::Unit::TestCase
 end]
 AAA[=fac(10)]BBB
 __EOT
-    assert_template_equal("true\nfalse\n", <<__EOT)
-[=fun :fac do end]
-[=fun :fac do end]
+    assert_template_equal("false\n\ntrue\n", <<__EOT)
+[=respond_to? :foobar]
+[=fun :foobar do end]
+[=respond_to? :foobar]
 __EOT
   end
 
