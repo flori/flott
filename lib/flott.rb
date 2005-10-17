@@ -505,11 +505,17 @@ module Flott
 
     # Creates a Parser object. _workdir_ is the directory, on which relative
     # template inclusions are based.
-    def initialize(source, workdir = nil)
+    def initialize(source, workdir = nil, rootdir = nil, filename = nil)
       if workdir
         @workdir = File.expand_path(workdir)
       else
         @workdir = File.expand_path(Dir.pwd)
+      end
+      if rootdir
+        @rootdir = File.expand_path(rootdir)
+      end
+      if filename
+        @filename  = File.expand_path(filename)
       end
       @ruby = RubyMode.new(self)
       @text = TextMode.new(self)
@@ -523,9 +529,7 @@ module Flott
       filename  = File.expand_path(filename)
       workdir   = File.dirname(filename)
       source    = File.read(filename)
-      obj = new(source, workdir)
-      obj.instance_variable_set :@filename, filename
-      obj
+      new(source, workdir, workdir, filename)
     end
 
     # The StringScanner instance of this Parser object.

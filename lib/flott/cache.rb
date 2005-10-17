@@ -28,12 +28,16 @@ module Flott
         @template.mtime != @mtime
       end
 
+      def rootpath
+        File.join(@cache.rootdir, @path)
+      end
+
       # Compile the file at _path_ with
       # a Flott::Parser instance and return it. This implies
       # that the _template_ attribute is set to the
       # return value for later reuse without compiling.
       def compile
-        parser    = Parser.from_filename(@path)
+        parser    = Parser.new(File.read(rootpath), File.dirname(rootpath), @cache.rootdir, rootpath)
         @template = parser.compile
         @mtime    = @template.mtime
       end
@@ -54,6 +58,8 @@ module Flott
     # Reload time in seconds for the template files of this Cache.
     attr_accessor :reload_time
 
+    attr_reader :rootdir
+
     # Return the page that was compiled and/or cached with the name
     # _name_. If block is given the page is yielded to instead.
     def get(name)
@@ -63,7 +69,7 @@ module Flott
           page.compile
         end
       else
-        page = Page.new(self, File.join(@rootdir, name))
+        page = Page.new(self, name)
         page.compile
         put(name, page)
       end
