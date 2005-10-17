@@ -707,12 +707,12 @@ module Flott
 
     def debug_output
       if Flott.debug
-        STDERR.printf "%-20s:%s\n", :mode, @current_mode.class
-        STDERR.printf "%-20s:%s\n", :last_open, state.last_open
-        STDERR.printf "%-20s:%s\n", :opened, state.opened
+        STDERR.printf "%-20s:%s\n", :mode,        @current_mode.class
+        STDERR.printf "%-20s:%s\n", :last_open,   state.last_open
+        STDERR.printf "%-20s:%s\n", :opened,      state.opened
         STDERR.printf "%-20s:%s\n", :directories, state.directories * ','
-        STDERR.printf "%-20s:%s\n", :peek, scanner.peek(60)
-        STDERR.printf "%-20s:%s\n", :compiled, state.compiled_string
+        STDERR.printf "%-20s:%s\n", :peek,        scanner.peek(60)
+        STDERR.printf "%-20s:%s\n", :compiled,    state.compiled_string
       end
     end
     private :debug_output
