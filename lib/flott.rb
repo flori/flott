@@ -697,8 +697,10 @@ module Flott
         when scanner.scan(OPEN)
           state.opened += 1
           state.compiled << scanner[0]
-        when scanner.scan(TEXT), scanner.scan(CURLY)
+        when scanner.scan(TEXT)
           state.compiled << scanner[0]
+        when scanner.scan(CURLY)
+          state.compiled << '\\' << scanner[0]
         else
           raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
         end
