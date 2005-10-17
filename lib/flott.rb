@@ -102,6 +102,8 @@ module Flott
   # calling the evaluated Proc object.
   class CallError < ParserError; end
 
+  class SecurityViolation < ParserError; end
+
   # This module contains methods to interpret filenames of the templates.
   module FilenameMixin
     # Interpret filename for included templates. Beginning with '/' is the root
@@ -109,14 +111,39 @@ module Flott
     # pathes are treated relative to this parsers workdir.
     def interpret_filename(filename)
       filename.untaint
+      STDERR.puts '1 ' + filename
       if filename[0] == ?/ 
         filename = File.join(rootdir, filename[1, filename.size])
       elsif workdir
         filename = File.join(workdir, filename)
       end
-      filename
+      STDERR.puts '2 ' + filename
+      File.expand_path(filename)
     end
     private :interpret_filename
+
+    def check_secure_path(path)
+      if File::ALT_SEPARATOR
+        if path.split(File::ALT_SEPARATOR).any? { |p| p == '..' }
+          raise SecurityViolation, "insecure path '#{path}' because of '..'"
+        end
+      else
+        if path[0] == ?~
+          raise SecurityViolation,
+            "insecure path '#{path}' because of starting '~'"
+        end
+        if path.split(File::SEPARATOR).any? { |p| p == '..' }
+          raise SecurityViolation, "insecure path '#{path}' because of '..'"
+        end
+      end
+    end
+    private :check_secure_path
+
+    
+    def sub_path(p, q)
+      q[/\A#{p}/] == p
+    end
+    private :sub_path
   end
 
   # This module can be included into classes that should act as an environment
@@ -227,6 +254,7 @@ module Flott
     # Dynamically Include the template _filename_ into the current template,
     # that is, at run-time.
     def include(filename)
+      check_secure_path(filename)
       filename = interpret_filename(filename)
       source = File.read(filename)
       Flott::Parser.new(source, workdir).evaluate(self.dup)
@@ -482,7 +510,6 @@ module Flott
     # [#comment]
     COMOPEN   =   /\[#\s*/
 
-
     # Regexp matching an open square bracket like '['.
     OPEN      =   /\[/
 
@@ -492,30 +519,44 @@ module Flott
     # Regexp matching an escaped closed square bracket like '\]'.
     ESCCLOSE  =   /\\\]/
 
-    # 
+    # Regexp matching general text, that doesn't need special handling.
     TEXT      =   /[^\\\]\[\{\}]+/
 
+    # Regexp matching the escape character '\'.
     ESC       =   /\\/
 
+    # Regexp machthing curly brackets '{' or '}'.
     CURLY     =   /[{}]/
 
+    # Regexp machthing open curly bracket like '{'.
     CURLYOPEN =   /\{/
 
+    # Regexp machthing open curly bracket like '}'.
     CURLYCLOSE=   /\}/
 
     # Creates a Parser object. _workdir_ is the directory, on which relative
-    # template inclusions are based.
+    # template inclusions are based. _rootdir_ is the directory. On which
+    # absolute template inclusions (starting with '/') are based. _filename_ is
+    # the filename of this template (if any), which is important to track
+    # changes in the template file to trigger a reloading.
     def initialize(source, workdir = nil, rootdir = nil, filename = nil)
       if workdir
+        check_secure_path(workdir)
         @workdir = File.expand_path(workdir)
       else
-        @workdir = File.expand_path(Dir.pwd)
+        @workdir = Dir.pwd
       end
       if rootdir
+        check_secure_path(rootdir)
         @rootdir = File.expand_path(rootdir)
       end
+      sub_path(self.rootdir, @workdir) or
+        raise SecurityViolation, "#{workdir} isn't a sub path of '#{self.rootdir}'"
       if filename
+        check_secure_path(filename)
         @filename  = File.expand_path(filename)
+        sub_path(@workdir, @filename) or
+          raise SecurityViolation, "#{@filename} isn't a sub path of '#{workdir}"
       end
       @ruby = RubyMode.new(self)
       @text = TextMode.new(self)
@@ -523,8 +564,8 @@ module Flott
       @scanner = StringScanner.new(source)
     end
 
-    # Creates a Parser object from _filename_, the _workdir_ attribute is set
-    # to the directory the file is located in.
+    # Creates a Parser object from _filename_, the _workdir_ and _rootdir
+    # attributes are set to the directory the file is located in.
     def self.from_filename(filename)
       filename  = File.expand_path(filename)
       workdir   = File.dirname(filename)

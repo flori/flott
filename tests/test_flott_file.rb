@@ -126,4 +126,26 @@ __EOT
     assert_equal @expected2, output
   end
 
+  def check_secure_pathes
+    assert_raises(SecurityViolation) do
+      Parser.new('foo', '~foo/bar')
+    end
+    assert Parser.new('foo', 'foo/bar')
+    assert_raises(SecurityViolation) do
+      assert Parser.new('foo', 'foo/bar/../baz')
+    end
+    assert_raises(SecurityViolation) do
+      assert Parser.new('foo', 'foo/bar')
+    end
+    assert_raises(SecurityViolation) do
+      Parser.new('foo', 'foo', '~foo/bar')
+    end
+    assert Parser.new('foo', 'foo', 'foo/bar')
+    assert_raises(SecurityViolation) do
+      assert Parser.new('foo', 'foo', 'foo/bar/../baz')
+    end
+    assert_raises(SecurityViolation) do
+      assert Parser.new('foo', 'foo', 'foo/bar')
+    end
+  end
 end
