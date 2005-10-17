@@ -52,6 +52,10 @@ class TC_Flott < Test::Unit::TestCase
 end]
 AAA[=fac(10)]BBB
 __EOT
+    assert_template_equal("true\nfalse\n", <<__EOT)
+[=fun :fac do end]
+[=fun :fac do end]
+__EOT
   end
 
   def test_environment_instance_variables

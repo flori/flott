@@ -213,8 +213,10 @@ module Flott
     #  end]
     #  fac(10) = [=fac(10)]
     def function(id, &block)
+      return false if respond_to? id
       sc = class << self; self; end
       sc.instance_eval { define_method(id, &block) }
+      true
     end
 
     alias fun function
