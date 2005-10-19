@@ -141,6 +141,7 @@ module Flott
 
     
     def sub_path(p, q)
+      return true
       q[/\A#{p}/] == p
     end
     private :sub_path
@@ -554,7 +555,7 @@ module Flott
         raise SecurityViolation, "#{workdir} isn't a sub path of '#{self.rootdir}'"
       if filename
         check_secure_path(filename)
-        @filename  = File.expand_path(filename)
+        #@filename  = File.expand_path(filename)
         sub_path(@workdir, @filename) or
           raise SecurityViolation, "#{@filename} isn't a sub path of '#{workdir}"
       end
