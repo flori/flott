@@ -111,13 +111,11 @@ module Flott
     # pathes are treated relative to this parsers workdir.
     def interpret_filename(filename)
       filename.untaint
-      STDERR.puts '1 ' + filename
       if filename[0] == ?/ 
         filename = File.join(rootdir, filename[1, filename.size])
       elsif workdir
         filename = File.join(workdir, filename)
       end
-      STDERR.puts '2 ' + filename
       File.expand_path(filename)
     end
     private :interpret_filename
@@ -141,7 +139,6 @@ module Flott
 
     
     def sub_path(p, q)
-      return true
       q[/\A#{p}/] == p
     end
     private :sub_path
@@ -550,12 +547,14 @@ module Flott
       if rootdir
         check_secure_path(rootdir)
         @rootdir = File.expand_path(rootdir)
+      else
+        @rootdir = @workdir
       end
       sub_path(self.rootdir, @workdir) or
         raise SecurityViolation, "#{workdir} isn't a sub path of '#{self.rootdir}'"
       if filename
         check_secure_path(filename)
-        #@filename  = File.expand_path(filename)
+        @filename  = File.expand_path(filename)
         sub_path(@workdir, @filename) or
           raise SecurityViolation, "#{@filename} isn't a sub path of '#{workdir}"
       end
@@ -589,9 +588,7 @@ module Flott
 
     # Compute the rootdir of this parser (these parsers). Cache the
     # result and return it.
-    def rootdir
-      @rootdir ||= parent ? parent.rootdir : @workdir
-    end
+    attr_reader :rootdir
 
     # Returns the current work directory of this parser.
     attr_accessor :workdir
@@ -634,15 +631,15 @@ module Flott
         state.pathes << filename
         source  = File.read(filename)
         workdir = File.dirname(filename)
-        fork(source, workdir)
+        fork(source, workdir, rootdir, filename)
       else
         raise CompileError, "Cannot open #{filename} for inclusion!"
       end
     end
 
     # Fork another Parser to handle an included template.
-    def fork(source, workdir)
-      parser        = self.class.new(source, workdir)
+    def fork(source, workdir, rootdir, filename)
+      parser        = self.class.new(source, workdir, rootdir, filename)
       parser.parent = self
       parser.compile_inner(@workdir != workdir)
     end

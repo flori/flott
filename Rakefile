@@ -14,7 +14,7 @@ end
 
 desc "Testing library"
 task :test do
-  ruby '-I ŀib tests/runner.rb'
+  ruby '-I lib tests/runner.rb'
 end
 
 desc "Benchmarking library"
