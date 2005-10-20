@@ -138,8 +138,8 @@ module Flott
     private :check_secure_path
 
     
-    def sub_path(p, q)
-      q[/\A#{p}/] == p
+    def sub_path(sp, path)
+      sp[/\A#{path}/] == path
     end
     private :sub_path
   end
@@ -550,13 +550,13 @@ module Flott
       else
         @rootdir = @workdir
       end
-      sub_path(self.rootdir, @workdir) or
-        raise SecurityViolation, "#{workdir} isn't a sub path of '#{self.rootdir}'"
+      sub_path(@workdir, @rootdir) or
+        raise SecurityViolation, "#{@workdir} isn't a sub path of '#{@rootdir}'"
       if filename
         check_secure_path(filename)
         @filename  = File.expand_path(filename)
-        sub_path(@workdir, @filename) or
-          raise SecurityViolation, "#{@filename} isn't a sub path of '#{workdir}"
+        sub_path(@filename, @workdir) or
+          raise SecurityViolation, "#{@filename} isn't a sub path of '#{@workdir}"
       end
       @ruby = RubyMode.new(self)
       @text = TextMode.new(self)
