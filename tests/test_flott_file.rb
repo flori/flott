@@ -101,10 +101,10 @@ __EOT
     env = Environment.new(output)
     env[:@name] = 'Flor<i>an'
     compiled = @parser.compile
-    Parser.evaluate(compiled, env)
+    Flott.evaluate(compiled, env)
     assert_equal(@expected, output.string)
     output.rewind
-    Parser.evaluate(compiled, env)
+    Flott.evaluate(compiled, env)
     assert_equal(@expected, output.string)
   end
 

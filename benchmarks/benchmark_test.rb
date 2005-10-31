@@ -2,7 +2,7 @@
 
 require 'bullshit'
 
-module TestCases
+module MyCases
   def setup
     @n    = 1_000
   end
@@ -49,12 +49,12 @@ end
 class BC_TestRepeat < Bullshit::RepeatCase
   repeat_iterations 250
 
-  include TestCases
+  include MyCases
 end
 
 class BC_TestTime < Bullshit::TimeCase
   repeat_duration 3
 
-  include TestCases
+  include MyCases
 end
 

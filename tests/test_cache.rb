@@ -10,7 +10,7 @@ class TC_Cache < Test::Unit::TestCase
   include Flott
 
   def setup
-    @cache = Cache.new('tests/templates', 1)
+    @cache = Cache.new('tests/templates', 2)
   end
 
   def test_kind
@@ -28,10 +28,10 @@ class TC_Cache < Test::Unit::TestCase
     template = @cache.get('template')
     assert_equal template, @cache.get('template')
     assert_equal template, @cache.get('template')
-    sleep 0.75
+    sleep 1.0
     touch 'tests/templates/template'
     assert_equal template, @cache.get('template')
-    sleep 1.5
+    sleep 3.0
     assert template != @cache.get('template')
     template = @cache.get('template')
     touch 'tests/templates/template'

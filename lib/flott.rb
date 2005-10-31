@@ -71,6 +71,8 @@ require 'strscan'
 # Flott template files to Flott::Template objects, which can then be evaluted
 # in a Flott::Environment.
 module Flott
+  autoload :Cache, 'flott/cache'
+
   class << self
     # True switches debugging mode on, false off.
     attr_accessor :debug
@@ -209,6 +211,7 @@ module Flott
     # _hash_.
     def update(hash)
       hash.each { |name, value| self[name] = value }
+      self
     end
 
     # Returns the instance variable _name_. The leading '@' can be omitted in
@@ -785,14 +788,6 @@ module Flott
       self
     end
 
-    # The already compiled ruby code is evaluated in the environment env.
-    # If no environment is given, a newly created environment is used.
-    def self.evaluate(compiled, env = Environment.new, &block)
-      env.instance_eval(&block) if block
-      compiled.evaluate(env)
-      self
-    end
-
     # This Proc object escapes _string_, by substituting &<>"' with
     # their respective html entities, and returns the result.
     HTML_ESCAPE = lambda do |string|
@@ -809,7 +804,39 @@ module Flott
     end
   end
 
-  autoload :Cache, 'flott/cache'
+  # The already compiled ruby code is evaluated in the environment env.
+  # If no environment is given, a newly created environment is used.
+  def self.evaluate(compiled, env = Environment.new, &block)
+    env.instance_eval(&block) if block
+    compiled.evaluate(env)
+    self
+  end
+
+  # XXX
+  def self.string_from_source(source, env = Environment.new, &block)
+    if !(EnvironmentExtension === env) and env.respond_to? :to_hash
+      env = Environment.new.update(env.to_hash)
+    end
+    output = ''
+    env.output = output
+    env.instance_eval(&block) if block
+    parser = Parser.new(source)
+    parser.evaluate(env)
+    env.output
+  end
+
+  # XXX
+  def self.string_from_file(filename, env = Environment.new, &block)
+    if !(EnvironmentExtension === env) and env.respond_to? :to_hash
+      env = Environment.new.update(env.to_hash)
+    end
+    output = ''
+    env.output = output
+    env.instance_eval(&block) if block
+    parser = Parser.from_filename(filename)
+    parser.evaluate(env)
+    env.output
+  end
 end
 
 if $0 == __FILE__
