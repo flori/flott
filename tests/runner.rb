@@ -2,7 +2,7 @@
 
 require 'test/unit/ui/console/testrunner'
 require 'test/unit/testsuite'
-$:.unshift File.expand_path(File.dirname($0))
+$:.unshift File.expand_path(File.dirname(__FILE__))
 $:.unshift 'lib'
 $:.unshift '../lib'
 begin

@@ -5,7 +5,7 @@ include Config
 
 PKG_NAME = 'flott'
 PKG_VERSION = File.read('VERSION').chomp
-PKG_FILES = FileList["**/*"].exclude(/CVS|^pkg|^coverage/)
+PKG_FILES = FileList["**/*"].exclude(/.svn|CVS|^pkg|^coverage/)
 
 desc "Installing library"
 task :install  do
@@ -15,6 +15,11 @@ end
 desc "Testing library"
 task :test do
   ruby '-I lib tests/runner.rb'
+end
+
+desc "Testing library with line coverage"
+task :coverage do
+  sh 'rcov -I lib tests/runner.rb'
 end
 
 desc "Benchmarking library"

@@ -9,8 +9,10 @@ class TC_Cache < Test::Unit::TestCase
   include FileUtils
   include Flott
 
+  TEMPLATES_DIR = File.join(File.dirname(__FILE__), 'templates')
+
   def setup
-    @cache = Cache.new('tests/templates', 2)
+    @cache = Cache.new(TEMPLATES_DIR, 2)
   end
 
   def test_kind
@@ -29,12 +31,12 @@ class TC_Cache < Test::Unit::TestCase
     assert_equal template, @cache.get('template')
     assert_equal template, @cache.get('template')
     sleep 1.0
-    touch 'tests/templates/template'
+    touch File.join(TEMPLATES_DIR, 'template')
     assert_equal template, @cache.get('template')
     sleep 3.0
     assert template != @cache.get('template')
     template = @cache.get('template')
-    touch 'tests/templates/template'
+    touch File.join(TEMPLATES_DIR, 'template')
     assert_equal template, @cache.get('template')
     template2 = @cache.get('template2')
     assert_kind_of Template, template2
