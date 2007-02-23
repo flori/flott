@@ -2,9 +2,9 @@
 
 require 'bullshit'
 
-class BC_FlottTime < Bullshit::TimeCase
-  self.rehearsal  = true
-  repeat_duration 10
+class BC_Flott < Bullshit::RepeatCase
+  warmup      true
+  iterations  10_000
 
   require 'erb'
 
@@ -109,4 +109,6 @@ class BC_FlottTime < Bullshit::TimeCase
       @amrita.expand(@output, { :time => Time.now })
     end
   end
+
+  compare :flott, :flott_e, :erb, :erb_e, :kashmir, :eruby, :amrita
 end
