@@ -10,7 +10,7 @@
 #   </head>
 #   <body>
 # And one file "template":
-#  [<header]
+#  [^header]
 #   <h1>Hello [=@name]!</h1>
 #   [for i in 1..6
 #     if i % 2 == 0]
@@ -29,7 +29,7 @@
 #  fp.evaluate(env)
 #
 # The output is created by including "header" into "template" with the
-# <tt>[<filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
+# <tt>[^filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
 # <tt>[print @name]</tt> while <tt>[=@name]</tt> first calls
 # Flott::Parser.escape on @name. It's also possible to just print or puts
 # strings.
@@ -504,8 +504,8 @@ module Flott
     # Regexp matching an escaped open square bracket like '\['.
     ESCOPEN   =   /\\\[/
     
-    # [<filename] XXX allow ] in filenames?
-    INCOPEN   =   /\[<\s*([^\]]+)\s*\]/
+    # [^filename] XXX allow ] in filenames?
+    INCOPEN   =   /\[\^\s*([^\]]+)\s*\]/
 
     # [="foo<bar"] "foo&lt;bar"
     PRIOPEN   =   /\[=\s*/

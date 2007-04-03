@@ -18,13 +18,13 @@ class TC_Flott < Test::Unit::TestCase
 
   def test_error
     assert_raises(CallError) do
-      Parser.new('<bla>[= [</bla>').evaluate
+      Parser.new('<bla>[= [^/bla>').evaluate
     end
     assert_raises(CallError) do
-      Parser.new('<bla>[</bla>').evaluate
+      Parser.new('<bla>[^/bla>').evaluate
     end
     assert_raises(CompileError) do
-      Parser.new('<bla>[<does_not_exist]</bla>').evaluate
+      Parser.new('<bla>[^does_not_exist]</bla>').evaluate
     end
   end
 

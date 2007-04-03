@@ -1,5 +1,5 @@
 <html>
 <body>
-[<subdir2/deepincluded2]
+[^subdir2/deepincluded2]
 </body>
 </html>
