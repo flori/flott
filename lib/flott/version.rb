@@ -1,6 +1,6 @@
 module Flott
   # Flott version
-  VERSION         = '0.0.14'
+  VERSION         = '0.0.15'
   VERSION_ARRAY   = VERSION.split(/\./).map { |x| x.to_i } # :nodoc:
   VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:
   VERSION_MINOR   = VERSION_ARRAY[1] # :nodoc:
