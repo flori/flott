@@ -155,5 +155,12 @@ __EOT
   def test_write
     assert_template_equal %Q'AAA&lt;BBB&gt;CCC', 'AAA[write "<BBB>"]CCC'
   end
+
+  def test_no_newline
+    assert_template_equal "a\nb\nc", "a\n[print 'b']\nc"
+    assert_template_equal "ab\nc", "a\n[-print 'b']\nc"
+    assert_template_equal "a\nbc", "a\n[print 'b'-]\nc"
+    assert_template_equal "abc", "a\n[-print 'b'-]\nc"
+  end
 end
   # vim: set et sw=2 ts=2:

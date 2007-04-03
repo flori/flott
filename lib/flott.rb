@@ -436,6 +436,7 @@ module Flott
         @compiled     = []
         @pathes       = []
         @directories  = []
+        @skip_cr      = false
       end
 
       # The number of current open (unescaped) brackets.
@@ -458,9 +459,12 @@ module Flott
       # (during parsing).
       attr_reader :directories
 
+      attr_accessor :skip_cr
+
       # Transform text mode parts to compiled code parts.
-      def text2compiled
+      def text2compiled(cr = true)
         return if text.empty?
+        text.last.chomp! unless cr
         compiled << '@__output__<<%q['
         compiled.concat(text)
         compiled << "]\n"
@@ -511,8 +515,14 @@ module Flott
     # [#comment]
     COMOPEN   =   /\[#\s*/
 
+    # XXX
+    MINOPEN      =   /\[-/
+
     # Regexp matching an open square bracket like '['.
     OPEN      =   /\[/
+
+    # XXX
+    MINCLOSE     =   /-\]/
 
     # Regexp matching an open square bracket like ']'.
     CLOSE     =   /\]/
@@ -521,7 +531,7 @@ module Flott
     ESCCLOSE  =   /\\\]/
 
     # Regexp matching general text, that doesn't need special handling.
-    TEXT      =   /[^\\\]\[\{\}]+/
+    TEXT      =   /([^-\\\]\[\{\}]+|-(?!\]))/
 
     # Regexp matching the escape character '\'.
     ESC       =   /\\/
@@ -675,6 +685,8 @@ module Flott
       # Scan the template in TextMode.
       def scan
         case
+        when state.skip_cr && scanner.scan(/\r?\n/)
+          state.skip_cr = false
         when scanner.scan(ESCOPEN)
           state.text << '\\['
         when scanner.scan(CURLYOPEN)
@@ -697,6 +709,10 @@ module Flott
           parser.goto_ruby_mode
           state.text2compiled
           state.compiled << "\n=begin\n"
+        when scanner.scan(MINOPEN)
+          state.last_open = :OPEN
+          parser.goto_ruby_mode
+          state.text2compiled(false)
         when scanner.scan(OPEN)
           state.last_open = :OPEN
           parser.goto_ruby_mode
@@ -720,8 +736,12 @@ module Flott
       # Scan the template in RubyMode.
       def scan
         case
-        when scanner.match?(CLOSE) && state.opened == 0
-          scanner.skip(CLOSE)
+        when state.opened == 0 && scanner.scan(MINCLOSE)
+          state.skip_cr = true
+          parser.goto_text_mode
+          state.compiled << "\n"
+          state.last_open = nil
+        when state.opened == 0 && scanner.scan(CLOSE) 
           parser.goto_text_mode
           case state.last_open
           when :PRIOPEN
@@ -736,7 +756,7 @@ module Flott
           state.last_open = nil
         when scanner.scan(ESCCLOSE)
           state.compiled << scanner[0]
-        when scanner.scan(CLOSE) && state.opened != 0
+        when scanner.scan(CLOSE) && state.opened != 0, scanner.scan(MINCLOSE) && state.opened != 0
           state.opened -= 1
           state.compiled << scanner[0]
         when scanner.scan(ESCOPEN)
