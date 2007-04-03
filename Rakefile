@@ -91,5 +91,23 @@ Rake::GemPackageTask.new(spec) do |pkg|
   pkg.package_files += PKG_FILES
 end
 
-task :release => [ :clean, :package ]
+desc m = "Writing version information for #{PKG_VERSION}"
+task :version do
+  puts m
+  File.open(File.join('lib', 'flott', 'version.rb'), 'w') do |v|
+    v.puts <<EOT
+module Flott
+  # Flott version
+  VERSION         = '#{PKG_VERSION}'
+  VERSION_ARRAY   = VERSION.split(/\\./).map { |x| x.to_i } # :nodoc:
+  VERSION_MAJOR   = VERSION_ARRAY[0] # :nodoc:
+  VERSION_MINOR   = VERSION_ARRAY[1] # :nodoc:
+  VERSION_BUILD   = VERSION_ARRAY[2] # :nodoc:
+end
+EOT
+  end
+end
+
+
+task :release => [ :clean, :version, :package ]
   # vim: set et sw=2 ts=2:

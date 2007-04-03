@@ -84,7 +84,7 @@ __EOT
   end
 
   class MyEnvironment < Array
-    include Flott::EnvironmentExtension
+    include Flott::EnvironmentMixin
 
     def initialize(*)
       environment_initialize
@@ -95,7 +95,7 @@ __EOT
   def test_my_environment
     env = MyEnvironment.new
     assert_kind_of Array, env
-    assert_kind_of Flott::EnvironmentExtension, env
+    assert_kind_of Flott::EnvironmentMixin, env
   end
 
   def test_p

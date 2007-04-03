@@ -71,6 +71,7 @@ require 'strscan'
 # Flott template files to Flott::Template objects, which can then be evaluted
 # in a Flott::Environment.
 module Flott
+  require 'flott/version'
   autoload :Cache, 'flott/cache'
 
   class << self
@@ -148,21 +149,21 @@ module Flott
 
   # This module can be included into classes that should act as an environment
   # for Flott templates. An instance variable @__output__
-  # (EnvironmentExtension#output) should hold an output object, that responds
+  # (EnvironmentMixin#output) should hold an output object, that responds
   # to the #<< method, usually an IO object. If no initialize method is defined
-  # in the including class, EnvironmentExtension#initialize uses STDOUT as this
+  # in the including class, EnvironmentMixin#initialize uses STDOUT as this
   # _output_ object.
   #
   # If the class has its own initialize method, the environment can
-  # be initialized with EnvironmentExtension#environment_initialize like
+  # be initialized with EnvironmentMixin#environment_initialize like
   # this:
   #  class Environment
-  #    include EnvironmentExtension
+  #    include EnvironmentMixin
   #    def initialize(*a)
   #      environment_initialize(*a)
   #    end
   #  end
-  module EnvironmentExtension
+  module EnvironmentMixin
     # Creates an Environment object, that outputs to _output_. The default
     # ouput object is STDOUT, but any object that responds to #<< will do.
     # _escape_ is a object that responds to #call (usually a Proc instance),
@@ -173,10 +174,10 @@ module Flott
       @__escape__ = escape
     end
 
-    # Calls EnvironmentExtension#initialize. This method should be called from
-    # classes that include EnvironmentExtension to initialize the environment.
+    # Calls EnvironmentMixin#initialize. This method should be called from
+    # classes that include EnvironmentMixin to initialize the environment.
     def environment_initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
-      m = EnvironmentExtension.instance_method(:initialize).bind(self)
+      m = EnvironmentMixin.instance_method(:initialize).bind(self)
       m.call(output, escape)
     end
 
@@ -390,7 +391,7 @@ module Flott
   # This class can instantiate environment objects to evaluate Flott Templates
   # in.
   class Environment
-    include EnvironmentExtension
+    include EnvironmentMixin
   end
 
   # Class for compiled Template objects, that can later be evaluated in a
@@ -515,13 +516,13 @@ module Flott
     # [#comment]
     COMOPEN   =   /\[#\s*/
 
-    # XXX
+    # Open succeded by minus deletes previous CRLF
     MINOPEN      =   /\[-/
 
     # Regexp matching an open square bracket like '['.
     OPEN      =   /\[/
 
-    # XXX
+    # Close preceded by minus deletes next CRLF
     MINCLOSE     =   /-\]/
 
     # Regexp matching an open square bracket like ']'.
@@ -834,7 +835,7 @@ module Flott
 
   # XXX
   def self.string_from_source(source, env = Environment.new, &block)
-    if !(EnvironmentExtension === env) and env.respond_to? :to_hash
+    if !(EnvironmentMixin === env) and env.respond_to? :to_hash
       env = Environment.new.update(env.to_hash)
     end
     output = ''
@@ -847,7 +848,7 @@ module Flott
 
   # XXX
   def self.string_from_file(filename, env = Environment.new, &block)
-    if !(EnvironmentExtension === env) and env.respond_to? :to_hash
+    if !(EnvironmentMixin === env) and env.respond_to? :to_hash
       env = Environment.new.update(env.to_hash)
     end
     output = ''
