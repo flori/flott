@@ -2,9 +2,9 @@
 
 require 'bullshit'
 
-class BC_Flott < Bullshit::RepeatCase
+class BC_Flott < Bullshit::TimeCase
   warmup      true
-  iterations  10_000
+  duration    10
 
   require 'erb'
 
@@ -27,7 +27,7 @@ class BC_Flott < Bullshit::RepeatCase
   rescue LoadError
   end
  
-  LENGTH = 10
+  LENGTH = 100
   
   def setup
     @output = String.new 
@@ -40,7 +40,7 @@ class BC_Flott < Bullshit::RepeatCase
   
   def setup_benchmark_flott
     @env    = Environment.new(@output)
-    @flott  = Parser.new( %'AAAAA[!Time.now]AAAAA' * LENGTH).compile
+    @flott  = Parser.new( %'AAAAA[!Time.now]AAAAA\n' * LENGTH).compile
   end
 
   def benchmark_flott
@@ -49,7 +49,7 @@ class BC_Flott < Bullshit::RepeatCase
 
   def setup_benchmark_flott_e
     @env    = Environment.new(@output)
-    @flott  = Parser.new( %'AAAAA[=Time.now]AAAAA' * LENGTH).compile
+    @flott  = Parser.new( %'AAAAA[=Time.now]AAAAA\n' * LENGTH).compile
   end
 
   def benchmark_flott_e
@@ -57,7 +57,7 @@ class BC_Flott < Bullshit::RepeatCase
   end
 
   def setup_benchmark_erb
-    @erb    = ERB.new(    %'AAAAA<%=Time.now%>AAAAA' * LENGTH, 0, '%<>')
+    @erb    = ERB.new(    %'AAAAA<%=Time.now%>AAAAA\n' * LENGTH, 0, '%<>')
   end
 
   def benchmark_erb
@@ -66,7 +66,7 @@ class BC_Flott < Bullshit::RepeatCase
 
   if defined? Kashmir
     def setup_benchmark_kashmir
-      @kashmir = Kashmir.new(%'AAAAA^(Time.now)AAAAA' * LENGTH)
+      @kashmir = Kashmir.new(%'AAAAA^(Time.now)AAAAA\n' * LENGTH)
     end
 
     def benchmark_kashmir
@@ -74,7 +74,7 @@ class BC_Flott < Bullshit::RepeatCase
     end
 
     def setup_benchmark_kashmir_e
-      @kashmir = Kashmir.for_XML(%'AAAAA^(Time.now)AAAAA' * LENGTH)
+      @kashmir = Kashmir.for_XML(%'AAAAA^(Time.now)AAAAA\n' * LENGTH)
     end
 
     def benchmark_kashmir_e
@@ -86,7 +86,7 @@ class BC_Flott < Bullshit::RepeatCase
     def setup_benchmark_eruby
       require 'stringio'
       ec = ERuby::Compiler.new
-      @eruby = ec.compile_string(%'AAAAA<%=Time.now%>AAAAA' * LENGTH)
+      @eruby = ec.compile_string(%'AAAAA<%=Time.now%>AAAAA\n' * LENGTH)
       $stdout = StringIO.new(@output)
     end
 
@@ -102,7 +102,7 @@ class BC_Flott < Bullshit::RepeatCase
 
   if defined? Amrita
     def setup_benchmark_amrita
-      @amrita = TemplateText.new(%'AAAAA<div id="time"></div>AAAAA' * LENGTH)
+      @amrita = TemplateText.new(%'AAAAA<div id="time"></div>AAAAA\n' * LENGTH)
     end
 
     def benchmark_amrita
