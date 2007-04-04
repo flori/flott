@@ -86,9 +86,10 @@ __EOT
   class MyEnvironment < Array
     include Flott::EnvironmentMixin
 
-    def initialize(*)
-      super
-    end
+    # or explicitly:
+    #def initialize(*)
+    #  super
+    #end
   end
 
   def test_my_environment
