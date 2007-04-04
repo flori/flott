@@ -14,9 +14,9 @@
 #   <h1>Hello [=@name]!</h1>
 #   [for i in 1..6
 #   if i % 2 == 0-]
-#    <b>Hello [=@name]!</b>
+#   <b>Hello [=@name]!</b>
 #   [else-]
-#    <i>Hello [=@name]!</i>
+#   <i>Hello [=@name]!</i>
 #   [end
 #   end-]
 #   </body>
@@ -147,13 +147,12 @@ module Flott
   # in the including class, EnvironmentMixin#initialize uses STDOUT as this
   # _output_ object.
   #
-  # If the class has its own initialize method, the environment can
-  # be initialized with EnvironmentMixin#environment_initialize like
-  # this:
-  #  class Environment
+  # If the class has its own initialize method, the environment can be
+  # initialized with super(output, escape)
+  # class Environment
   #    include EnvironmentMixin
-  #    def initialize(*a)
-  #      environment_initialize(*a)
+  #    def initialize(output, escape)
+  #      super(output, escape)
   #    end
   #  end
   module EnvironmentMixin
@@ -165,13 +164,6 @@ module Flott
     def initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
       @__output__ = output
       @__escape__ = escape
-    end
-
-    # Calls EnvironmentMixin#initialize. This method should be called from
-    # classes that include EnvironmentMixin to initialize the environment.
-    def environment_initialize(output = STDOUT, escape = Flott::Parser::HTML_ESCAPE)
-      m = EnvironmentMixin.instance_method(:initialize).bind(self)
-      m.call(output, escape)
     end
 
     # The output object for this Environment object. It should respond to the

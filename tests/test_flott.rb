@@ -87,7 +87,6 @@ __EOT
     include Flott::EnvironmentMixin
 
     def initialize(*)
-      environment_initialize
       super
     end
   end
