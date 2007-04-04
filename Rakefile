@@ -19,7 +19,7 @@ end
 
 desc "Testing library with line coverage"
 task :coverage do
-  sh 'rcov -I lib tests/runner.rb'
+  sh 'rcov -xtests -I lib tests/runner.rb'
 end
 
 desc "Benchmarking library"
