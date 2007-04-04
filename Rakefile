@@ -24,9 +24,7 @@ end
 
 desc "Benchmarking library"
 task :benchmark do
-  cd 'benchmarks' do
-    ruby '-I ../lib runner.rb'
-  end
+  ruby '-Ilib benchmarks/runner.rb'
 end
 
 task :doc do

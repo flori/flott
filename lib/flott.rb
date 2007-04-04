@@ -10,15 +10,15 @@
 #   </head>
 #   <body>
 # And one file "template":
-#  [^header]
+#   [^header-]
 #   <h1>Hello [=@name]!</h1>
 #   [for i in 1..6
-#     if i % 2 == 0]
-#       <b>Hello [=@name]!</b>
-#     [else]
-#       <i>Hello [=@name]!</i>
-#     [end
-#   end]
+#   if i % 2 == 0-]
+#    <b>Hello [=@name]!</b>
+#   [else-]
+#    <i>Hello [=@name]!</i>
+#   [end
+#   end-]
 #   </body>
 #  </html>
 # 
@@ -50,19 +50,12 @@
 #   <body>
 #  
 #   <h1>Hello Florian!</h1>
-#  
-#       <i>Hello Florian!</i>
-#  
-#       <b>Hello Florian!</b>
-#  
-#       <i>Hello Florian!</i>
-#  
-#       <b>Hello Florian!</b>
-#  
-#       <i>Hello Florian!</i>
-#  
-#       <b>Hello Florian!</b>
-#  
+#   <i>Hello Florian!</i>
+#   <b>Hello Florian!</b>
+#   <i>Hello Florian!</i>
+#   <b>Hello Florian!</b>
+#   <i>Hello Florian!</i>
+#   <b>Hello Florian!</b>
 #   </body>
 #  </html>
 require 'strscan'
@@ -505,7 +498,7 @@ module Flott
     ESCOPEN   =   /\\\[/
     
     # [^filename] XXX allow ] in filenames?
-    INCOPEN   =   /\[\^\s*([^\]]+)\s*\]/
+    INCOPEN   =   /\[\^\s*([^\]]+?)\s*(-)?\]/
 
     # [="foo<bar"] "foo&lt;bar"
     PRIOPEN   =   /\[=\s*/
@@ -686,7 +679,7 @@ module Flott
       # Scan the template in TextMode.
       def scan
         case
-        when state.skip_cr && scanner.scan(/\r?\n/)
+        when state.skip_cr && scanner.skip(/\r?\n/)
           state.skip_cr = false
         when scanner.scan(ESCOPEN)
           state.text << '\\['
@@ -695,6 +688,7 @@ module Flott
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
           parser.include_template(scanner[1])
+          state.skip_cr = !!scanner[2]
         when scanner.scan(PRIOPEN)
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
@@ -757,7 +751,8 @@ module Flott
           state.last_open = nil
         when scanner.scan(ESCCLOSE)
           state.compiled << scanner[0]
-        when scanner.scan(CLOSE) && state.opened != 0, scanner.scan(MINCLOSE) && state.opened != 0
+        when scanner.scan(CLOSE) && state.opened != 0,
+            scanner.scan(MINCLOSE) && state.opened != 0
           state.opened -= 1
           state.compiled << scanner[0]
         when scanner.scan(ESCOPEN)
@@ -776,14 +771,12 @@ module Flott
     end
 
     def debug_output
-      if Flott.debug
-        STDERR.printf "%-20s:%s\n", :mode,        @current_mode.class
-        STDERR.printf "%-20s:%s\n", :last_open,   state.last_open
-        STDERR.printf "%-20s:%s\n", :opened,      state.opened
-        STDERR.printf "%-20s:%s\n", :directories, state.directories * ','
-        STDERR.printf "%-20s:%s\n", :peek,        scanner.peek(60)
-        STDERR.printf "%-20s:%s\n", :compiled,    state.compiled_string
-      end
+      STDERR.printf "%-20s:%s\n", :mode,        @current_mode.class
+      STDERR.printf "%-20s:%s\n", :last_open,   state.last_open
+      STDERR.printf "%-20s:%s\n", :opened,      state.opened
+      STDERR.printf "%-20s:%s\n", :directories, state.directories * ','
+      STDERR.printf "%-20s:%s\n", :peek,        scanner.peek(60)
+      STDERR.printf "%-20s:%s\n", :compiled,    state.compiled_string
     end
     private :debug_output
 
@@ -791,13 +784,13 @@ module Flott
       scanner.reset
       workdir_changed and state.push_workdir(self)
       until scanner.eos?
-        debug_output
+        Flott.debug && debug_output
         @current_mode.scan
       end
-      debug_output
+      Flott.debug && debug_output
       state.text2compiled
       workdir_changed and state.pop_workdir
-      debug_output
+      Flott.debug && debug_output
     end
     protected :compile_inner
 
@@ -809,18 +802,27 @@ module Flott
       self
     end
 
+    # :nodoc:
+    ESCAPE__ = lambda do |c|
+      case c[0]
+      when ?0 then '&amp;'
+      when ?< then '&lt;' 
+      when ?> then '&gt;'
+      when ?" then '&quot;'
+      when ?' then '&apos;'
+      else raise "unknown character '#{c}'"
+      end
+    end
+
     # This Proc object escapes _string_, by substituting &<>"' with
     # their respective html entities, and returns the result.
     HTML_ESCAPE = lambda do |string|
-      string.to_s.gsub(/[&<>"']/) do |c|
-        case c
-        when '&' then '&amp;'
-        when '<' then '&lt;' 
-        when '>' then '&gt;'
-        when '"' then '&quot;'
-        when "'" then '&apos;'
-        else raise "unknown character '#{c}'"
-        end
+      if string.respond_to?(:to_str)
+        string.to_str.gsub(/[&<>"']/, &ESCAPE__)
+      else
+        string = string.to_s
+        string.gsub!(/[&<>"']/, &ESCAPE__)
+        string
       end
     end
   end

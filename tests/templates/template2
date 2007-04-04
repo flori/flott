@@ -1,4 +1,4 @@
-[^header]
+[^header-]
 Workdir before (template2): [=workdir]
 [^subdir/included]
 Workdir after (template2): [=workdir]

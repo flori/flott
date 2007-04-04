@@ -45,7 +45,6 @@ __EOT
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
  </head>
  <body>
-
 Workdir before (template2): @{prefix}
 Workdir 1 (included): @{prefix}/subdir
 Toplevel
