@@ -463,9 +463,9 @@ module Flott
       attr_accessor :skip_cr
 
       # Transform text mode parts to compiled code parts.
-      def text2compiled(cr = true)
+      def text2compiled(dont_sub = true)
         return if text.empty?
-        text.last.chomp! unless cr
+        text.last.sub!(/[\t ]+$/, '') unless dont_sub
         compiled << '@__output__<<%q['
         compiled.concat(text)
         compiled << "]\n"
@@ -516,13 +516,13 @@ module Flott
     # [#comment]
     COMOPEN   =   /\[#\s*/
 
-    # Open succeded by minus deletes previous CRLF
+    # Open succeded by minus deletes previous whitespaces until start of line.
     MINOPEN      =   /\[-/
 
     # Regexp matching an open square bracket like '['.
     OPEN      =   /\[/
 
-    # Close preceded by minus deletes next CRLF
+    # Close preceded by minus deletes next CRLF.
     MINCLOSE     =   /-\]/
 
     # Regexp matching an open square bracket like ']'.

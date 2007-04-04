@@ -158,9 +158,22 @@ __EOT
 
   def test_no_newline
     assert_template_equal "a\nb\nc", "a\n[print 'b']\nc"
-    assert_template_equal "ab\nc", "a\n[-print 'b']\nc"
-    assert_template_equal "a\nbc", "a\n[print 'b'-]\nc"
-    assert_template_equal "abc", "a\n[-print 'b'-]\nc"
+    assert_template_equal "ab\nc", "a  [-print 'b']\nc"
+    assert_template_equal "a  bc", "a  [print 'b'-]\nc"
+    assert_template_equal "abc", "a  [-print 'b'-]\nc"
+    assert_template_equal <<DST, <<SRC
+<ul>
+  <li>1</li>
+  <li>2</li>
+  <li>3</li>
+</ul>
+DST
+<ul>
+  [-3.times do |i|-]
+  <li>[=i + 1]</li>
+  [-end-]
+</ul>
+SRC
   end
 end
   # vim: set et sw=2 ts=2:
