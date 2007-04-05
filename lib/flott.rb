@@ -408,7 +408,7 @@ module Flott
   end
 
   # The Flott::Parser class creates parser objects, that can be used to compile
-  # Flott template documents or files to Flott::Template іnstances.
+  # Flott template documents or files to Flott::Template instances.
   class Parser
     # This class encapsulates the state, that is shared by all parsers
     # that were activated during the parse phase.
@@ -794,26 +794,25 @@ module Flott
       self
     end
 
-    # :nodoc:
-    ESCAPE__ = lambda do |c|
-      case c[0]
-      when ?0 then '&amp;'
-      when ?< then '&lt;' 
-      when ?> then '&gt;'
-      when ?" then '&quot;'
-      when ?' then '&apos;'
-      else raise "unknown character '#{c}'"
-      end
-    end
+    # :stopdoc:
+    ESCAPE_MAP = Hash.new { |h, c| raise "unknown character '#{c}'" }
+    ESCAPE_MAP.update({
+      ?0 => '&amp;',
+      ?< => '&lt;',
+      ?> => '&gt;',
+      ?" => '&quot;',
+      ?' => '&apos;'
+    })
+    # :startdoc:
 
     # This Proc object escapes _string_, by substituting &<>"' with
     # their respective html entities, and returns the result.
     HTML_ESCAPE = lambda do |string|
       if string.respond_to?(:to_str)
-        string.to_str.gsub(/[&<>"']/, &ESCAPE__)
+        string.to_str.gsub(/[&<>"']/) { |c| ESCAPE_MAP[c[0]] }
       else
         string = string.to_s
-        string.gsub!(/[&<>"']/, &ESCAPE__)
+        string.gsub!(/[&<>"']/) { |c| ESCAPE_MAP[c[0]] }
         string
       end
     end
