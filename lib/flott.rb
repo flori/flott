@@ -797,7 +797,7 @@ module Flott
     # :stopdoc:
     ESCAPE_MAP = Hash.new { |h, c| raise "unknown character '#{c}'" }
     ESCAPE_MAP.update({
-      ?0 => '&amp;',
+      ?& => '&amp;',
       ?< => '&lt;',
       ?> => '&gt;',
       ?" => '&quot;',
