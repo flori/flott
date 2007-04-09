@@ -685,12 +685,12 @@ module Flott
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << "@__output__<<@__escape__.call(begin\n"
+          state.compiled << "@__output__<<@__escape__.call((\n"
         when scanner.scan(RAWOPEN)
           state.last_open = :RAWOPEN
           parser.goto_ruby_mode
           state.text2compiled
-          state.compiled << "@__output__<<(begin\n"
+          state.compiled << "@__output__<<((\n"
         when scanner.scan(COMOPEN)
           state.last_open = :COMOPEN
           parser.goto_ruby_mode
@@ -732,9 +732,9 @@ module Flott
           parser.goto_text_mode
           case state.last_open
           when :PRIOPEN
-            state.compiled << "\nend)\n"
+            state.compiled << "\n))\n"
           when :RAWOPEN
-            state.compiled << "\nend.to_s)\n"
+            state.compiled << "\n).to_s)\n"
           when :COMOPEN
             state.compiled << "\n=end\n"
           else
