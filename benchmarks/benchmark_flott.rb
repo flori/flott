@@ -41,7 +41,7 @@ class BC_Flott < Bullshit::TimeCase
   def setup_benchmark_flott
     GC.start
     @env    = Environment.new(@output)
-    @flott  = Parser.new( %'AAAAA[!Time.now]AAAAA\n' * LENGTH).compile
+    @flott  = Parser.new( %'AAAAA[!3.141 ** 2]AAAAA\n' * LENGTH).compile
   end
 
   def benchmark_flott
@@ -52,7 +52,7 @@ class BC_Flott < Bullshit::TimeCase
   def setup_benchmark_flott_e
     GC.start
     @env    = Environment.new(@output)
-    @flott  = Parser.new( %'AAAAA[=Time.now]AAAAA\n' * LENGTH).compile
+    @flott  = Parser.new( %'AAAAA[=3.141 ** 2]AAAAA\n' * LENGTH).compile
   end
 
   def benchmark_flott_e
@@ -62,7 +62,7 @@ class BC_Flott < Bullshit::TimeCase
 
   def setup_benchmark_erb
     GC.start
-    @erb    = ERB.new(    %'AAAAA<%=Time.now%>AAAAA\n' * LENGTH, 0, '%<>')
+    @erb    = ERB.new(    %'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH, 0, '%<>')
   end
 
   def benchmark_erb
@@ -73,7 +73,7 @@ class BC_Flott < Bullshit::TimeCase
   if defined? Kashmir
     def setup_benchmark_kashmir
       GC.start
-      @kashmir = Kashmir.new(%'AAAAA^(Time.now)AAAAA\n' * LENGTH)
+      @kashmir = Kashmir.new(%'AAAAA^(3.141 ** 2)AAAAA\n' * LENGTH)
     end
 
     def benchmark_kashmir
@@ -82,7 +82,7 @@ class BC_Flott < Bullshit::TimeCase
 
     def setup_benchmark_kashmir_e
       GC.start
-      @kashmir = Kashmir.for_XML(%'AAAAA^(Time.now)AAAAA\n' * LENGTH)
+      @kashmir = Kashmir.for_XML(%'AAAAA^(3.141 ** 2)AAAAA\n' * LENGTH)
     end
 
     def benchmark_kashmir_e
@@ -95,7 +95,7 @@ class BC_Flott < Bullshit::TimeCase
       GC.start
       require 'stringio'
       ec = ERuby::Compiler.new
-      @eruby = ec.compile_string(%'AAAAA<%=Time.now%>AAAAA\n' * LENGTH)
+      @eruby = ec.compile_string(%'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH)
       $stdout = StringIO.new(@output)
     end
 
@@ -113,11 +113,11 @@ class BC_Flott < Bullshit::TimeCase
   if defined? Amrita
     def setup_benchmark_amrita
       GC.start
-      @amrita = TemplateText.new(%'AAAAA<div id="time"></div>AAAAA\n' * LENGTH)
+      @amrita = TemplateText.new(%'AAAAA<div id="test"></div>AAAAA\n' * LENGTH)
     end
 
     def benchmark_amrita
-      @amrita.expand(@output, { :time => Time.now })
+      @amrita.expand(@output, { :test => 3.141 ** 2 })
       output_reset
     end
   end
