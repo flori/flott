@@ -43,7 +43,6 @@ class BC_Flott < Bullshit::TimeCase
     @env    = Environment.new(@output)
     par = Parser.new( %'AAAAA[!3.141 ** 2]AAAAA\n' * LENGTH)
     @flott  = par.compile
-    puts par.state.compiled_string
   end
 
   def benchmark_flott
