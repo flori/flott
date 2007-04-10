@@ -30,6 +30,11 @@ class TC_Flott < Test::Unit::TestCase
 
   def test_for_errors
     assert_template_equal 'puts "\n"', 'puts "\n"'
+    assert_template_equal "123\n", '[print [1, 2, "3"], "\n" ]'
+    assert_template_equal "a\b", '[print "a\b" ]'
+    assert_template_equal "a\b", '[print "a\\b" ]'
+    assert_template_equal "a\b", '[print "a\\\b" ]'
+    assert_template_equal "a\b", '[print "a\\\\b" ]'
     assert_template_equal "puts [1, 2, '3']", "puts \\[1, 2, '3']"
     assert_template_equal "puts {1, 2}", "puts {1, 2}"
     assert_template_equal "puts {1, 2}", "puts {1, [=1+1]}"

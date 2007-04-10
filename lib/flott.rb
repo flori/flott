@@ -565,6 +565,9 @@ module Flott
     # Regexp matching the escape character '\'.
     ESC       =   /\\/
 
+    # XXX
+    ESC_NEXT       =   /\\([^\]])/
+
     # Regexp machthing curly brackets '{' or '}'.
     CURLY     =   /[{}]/
 
@@ -799,6 +802,12 @@ module Flott
           state.compiled << scanner[0]
         when scanner.scan(CURLY)
           state.compiled << '\\' << scanner[0]
+        when scanner.scan(ESC_NEXT)
+          if scanner[1][0] == ?\\
+            state.compiled << scanner[0]
+          else
+            state.compiled << eval(%'"#{scanner[0]}"')
+          end
         else
           raise CompileError, "unknown tokens '#{scanner.peek(40)}'"
         end
