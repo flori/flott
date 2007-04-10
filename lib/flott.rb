@@ -1,4 +1,5 @@
 # XXX
+# 
 # If two template files are saved in the current directory.
 # One file "header":
 #  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -68,8 +69,47 @@ module Flott
   autoload :Cache, 'flott/cache'
 
   class << self
-    # True switches debugging mode on, false off.
+    # True switches debugging mode on, false off. Defaults to false.
     attr_accessor :debug
+
+    # The already compiled ruby code is evaluated in the environment env.
+    # If no environment is given, a newly created environment is used.
+    def evaluate(compiled, env = Environment.new, &block)
+      env.instance_eval(&block) if block
+      compiled.evaluate(env)
+      self
+    end
+
+    # Create an output string from template source _source_, evaluated in the
+    # Environment _env_. If _block_ is given it is evaluated in the _env_ context
+    # as well.
+    def string_from_source(source, env = Environment.new, &block)
+      if !(EnvironmentMixin === env) and env.respond_to? :to_hash
+        env = Environment.new.update(env.to_hash)
+      end
+      output = ''
+      env.output = output
+      env.instance_eval(&block) if block
+      parser = Parser.new(source)
+      parser.evaluate(env)
+      env.output
+    end
+
+    # Create an output string from the template file _filename_, evaluated in the
+    # Environment _env_. If _block_ is given it is evaluated in the _env_ context
+    # as well. This will set the rootdir and workdir attributes, in order to
+    # dynamic include other templates into this one.
+    def string_from_file(filename, env = Environment.new, &block)
+      if !(EnvironmentMixin === env) and env.respond_to? :to_hash
+        env = Environment.new.update(env.to_hash)
+      end
+      output = ''
+      env.output = output
+      env.instance_eval(&block) if block
+      parser = Parser.from_filename(filename)
+      parser.evaluate(env)
+      env.output
+    end
   end
   Flott.debug = false
 
@@ -187,7 +227,7 @@ module Flott
       @__rootdir__
     end
 
-    # Returns the current work directory of this environment. Ths
+    # Returns the current work directory of this environment. This
     # value changes during evaluation of a template.
     def workdir
       @__workdir__ or raise EvalError, "workdir was undefined"
@@ -259,6 +299,7 @@ module Flott
       nil
     end
 
+    # Like Kernel#p without any escaping.
     def p!(*objects)
       for o in objects
         string = o.inspect
@@ -280,6 +321,7 @@ module Flott
       nil
     end
 
+    # Like Kernel#pp without any escaping.
     def pp!(*objects)
       require 'pp'
       for o in objects
@@ -489,8 +531,9 @@ module Flott
     # Regexp matching an escaped open square bracket like '\['.
     ESCOPEN   =   /\\\[/
     
-    # [^filename] XXX allow ] in filenames?
+    # [^filename]
     INCOPEN   =   /\[\^\s*([^\]]+?)\s*(-)?\]/
+    # TODO allow ] in filenames?
 
     # [="foo<bar"] "foo&lt;bar"
     PRIOPEN   =   /\[=\s*/
@@ -803,7 +846,6 @@ module Flott
       ?" => '&quot;',
       ?' => '&apos;'
     })
-    # :startdoc:
 
     # This Proc object escapes _string_, by substituting &<>"' with
     # their respective html entities, and returns the result.
@@ -816,40 +858,7 @@ module Flott
         string
       end
     end
-  end
-
-  # The already compiled ruby code is evaluated in the environment env.
-  # If no environment is given, a newly created environment is used.
-  def self.evaluate(compiled, env = Environment.new, &block)
-    env.instance_eval(&block) if block
-    compiled.evaluate(env)
-    self
-  end
-
-  # XXX
-  def self.string_from_source(source, env = Environment.new, &block)
-    if !(EnvironmentMixin === env) and env.respond_to? :to_hash
-      env = Environment.new.update(env.to_hash)
-    end
-    output = ''
-    env.output = output
-    env.instance_eval(&block) if block
-    parser = Parser.new(source)
-    parser.evaluate(env)
-    env.output
-  end
-
-  # XXX
-  def self.string_from_file(filename, env = Environment.new, &block)
-    if !(EnvironmentMixin === env) and env.respond_to? :to_hash
-      env = Environment.new.update(env.to_hash)
-    end
-    output = ''
-    env.output = output
-    env.instance_eval(&block) if block
-    parser = Parser.from_filename(filename)
-    parser.evaluate(env)
-    env.output
+    # :startdoc:
   end
 end
 

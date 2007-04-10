@@ -28,6 +28,8 @@ module Flott
         @template.mtime != @mtime
       end
 
+      # Returns the path to this page, with the prepended rootdir of the Cache
+      # instance of this page.
       def rootpath
         File.join(@cache.rootdir, @path)
       end
@@ -82,6 +84,7 @@ module Flott
     rescue Errno::ENOENT, Errno::EISDIR
     end
 
+    # Return the cached page _name_, evaluated in the Environment _env_.
     def evaluate(name, env = Environment.new)
       get(name) { |template| template.evaluate(env) } or return
       self
