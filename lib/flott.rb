@@ -804,7 +804,8 @@ module Flott
           state.compiled << '\\' << scanner[0]
         when scanner.scan(ESC_NEXT)
           if scanner[1][0] == ?\\
-            state.compiled << scanner[0]
+            # XXX
+            state.compiled << scanner[1]
           else
             state.compiled << eval(%'"#{scanner[0]}"')
           end
