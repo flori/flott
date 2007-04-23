@@ -266,13 +266,39 @@ module Flott
     #    end
     #  end]
     #  fac(10) = [=fac(10)]
-    def function(id, &block)
+    def function(id, opts = {}, &block)
       sc = class << self; self; end
-      sc.instance_eval { define_method(id, &block) }
+      if opts[:memoize]
+        cache = {}
+        sc.instance_eval do
+          define_method(id) do |*args|
+            if cache.key?(args)
+              cache[args]
+            else
+              cache[args] = block[args]
+            end
+          end
+        end
+      else
+        sc.instance_eval { define_method(id, &block) }
+      end
       nil
     end
 
     alias fun function
+
+    # Memoize method with id _id_, if called.
+    def memoize(id)
+      cache = {}
+      sc = class << self; self; end
+      sc.send(:define_method, id) do |*args|
+        if cache.key?(args)
+          cache[args]
+        else
+          cache[args] = super
+        end
+      end
+    end
 
     private
    

@@ -185,5 +185,10 @@ DST
 </ul>
 SRC
   end
+
+  def test_function
+    assert_template_equal "AAABB", "[=function :multiple do |x, n| x * n end;multiple 'A', 3][=multiple 'B', 2]"
+    assert_template_equal "AAABB", "[=function :multiple, :memoize => 3 do |x, n| x * n end;multiple 'A', 3][=multiple 'B', 2]"
+  end
 end
   # vim: set et sw=2 ts=2:
