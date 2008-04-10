@@ -41,6 +41,7 @@ module Flott
       def compile
         parser    = Parser.new(File.read(rootpath), File.dirname(rootpath), @cache.rootdir, rootpath)
         @template = parser.compile
+        @template.page_cache = @cache
         @mtime    = @template.mtime
       end
     end

@@ -1,5 +1,6 @@
 <html>
 <body>
 [^subdir2/deepincluded2]
-</body>
+[include 'subdir2/deepincluded2']
+[include '/toplevel2']</body>
 </html>

@@ -156,6 +156,18 @@ module Flott
     end
     private :interpret_filename
 
+    def interpret_filename_as_page(filename)
+      filename.untaint
+      if filename[0] == ?/ 
+        filename = filename[1, filename.size]
+      elsif workdir
+        filename = File.expand_path(File.join(workdir, filename))
+        filename[rootdir] = ''
+      end
+      filename
+    end
+    private :interpret_filename
+
     def check_secure_path(path)
       if File::ALT_SEPARATOR
         if path.split(File::ALT_SEPARATOR).any? { |p| p == '..' }
@@ -220,6 +232,10 @@ module Flott
 
     # The escape object for this Environment object.
     attr_accessor :escape
+
+    # If the currently evaluated Template originated from a Flott::Cache this
+    # method returns it, otherwise nil is returned.
+    attr_accessor :page_cache
 
     # Returns the root directory of this environment, it should be
     # constant during the whole evaluation.
@@ -308,9 +324,13 @@ module Flott
     # that is, at run-time.
     def include(filename)
       check_secure_path(filename)
-      filename = interpret_filename(filename)
-      source = File.read(filename)
-      Flott::Parser.new(source, workdir).evaluate(self.dup)
+      if page_cache
+        page_cache.get(interpret_filename_as_page(filename)).evaluate(self.dup)
+      else
+        filename = interpret_filename(filename)
+        source = File.read(filename)
+        Flott::Parser.new(source, workdir).evaluate(self.dup)
+      end
     rescue # TODO logging??
       print "[dynamic include of '#{filename}' failed]"
     end
@@ -459,6 +479,10 @@ module Flott
     # The pathes of the template and all included sub-templates.
     attr_accessor :pathes
 
+    # Returns the Flott::Cache this Template originated from or nil, if no
+    # cache was used.
+    attr_accessor :page_cache
+
     # Returns the newest _mtime_ of all the involved #pathes.
     def mtime
       @pathes.map { |path| File.stat(path).mtime }.max
@@ -467,6 +491,7 @@ module Flott
     # Evaluates this Template Object in the Environment _environment_ (first
     # argument).
     def call(environment, *)
+      environment.page_cache = page_cache
       super
     rescue SyntaxError => e
       raise CallError.wrap(e)
@@ -752,7 +777,7 @@ module Flott
         when scanner.scan(INCOPEN)
           state.last_open = :INCOPEN
           parser.include_template(scanner[1])
-          state.skip_cr = !!scanner[2]
+          state.skip_cr = scanner[2]
         when scanner.scan(PRIOPEN)
           state.last_open = :PRIOPEN
           parser.goto_ruby_mode
