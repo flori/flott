@@ -2,9 +2,17 @@
 
 require 'bullshit'
 
-class BC_Flott < Bullshit::TimeCase
+class FlottBenchmark < Bullshit::RepeatCase
   warmup      true
-  duration    10
+
+  truncate_data do
+    window_size 50
+  end
+
+  iterations 1000
+
+  output_dir File.join(File.dirname(__FILE__), 'data')
+  data_file  yes
 
   require 'erb'
 
@@ -22,8 +30,8 @@ class BC_Flott < Bullshit::TimeCase
   end
 
   begin
-    require "amrita/template"
-    include Amrita
+    require "amrita2"
+    include Amrita2
   rescue LoadError
   end
  
@@ -33,47 +41,46 @@ class BC_Flott < Bullshit::TimeCase
     @output = String.new 
   end
 
-  def output_reset
+  def common_output_reset
     @output.empty? and raise "No output generated!"
     @output.replace ''
   end
 
-  def setup_benchmark_flott
-    GC.start
+  def setup_flott
     @env    = Environment.new(@output)
-    par = Parser.new( %'AAAAA[!3.141 ** 2]AAAAA\n' * LENGTH)
+    par     = Parser.new( %'AAAAA[!3.141 ** 2]AAAAA\n' * LENGTH)
     @flott  = par.compile
   end
 
   def benchmark_flott
     @flott.evaluate(@env)
-    output_reset
   end
 
-  def setup_benchmark_flott_e
-    GC.start
+  alias reset_flott common_output_reset
+
+  def setup_flott_escaped
     @env    = Environment.new(@output)
     @flott  = Parser.new( %'AAAAA[=3.141 ** 2]AAAAA\n' * LENGTH).compile
   end
 
-  def benchmark_flott_e
+  def benchmark_flott_escaped
     @flott.evaluate(@env)
-    output_reset
   end
 
-  def setup_benchmark_erb
-    GC.start
+  alias reset_flott_escaped common_output_reset
+
+  def setup_erb
     @erb    = ERB.new(    %'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH, 0, '%<>')
   end
 
   def benchmark_erb
     @output = @erb.result
-    output_reset
   end
 
+  alias reset_erb common_output_reset
+
   if defined? Kashmir
-    def setup_benchmark_kashmir
-      GC.start
+    def setup_kashmir
       @kashmir = Kashmir.new(%'AAAAA^(3.141 ** 2)AAAAA\n' * LENGTH)
     end
 
@@ -81,19 +88,21 @@ class BC_Flott < Bullshit::TimeCase
       @output = @kashmir.expand(Object.new)
     end
 
-    def setup_benchmark_kashmir_e
-      GC.start
+    alias reset_kashmir common_output_reset
+
+    def setup_kashmir_escaped
       @kashmir = Kashmir.for_XML(%'AAAAA^(3.141 ** 2)AAAAA\n' * LENGTH)
     end
 
-    def benchmark_kashmir_e
+    def benchmark_kashmir_escaped
       @output = @kashmir.expand(Object.new)
     end
+
+    alias reset_kashmir_escaped common_output_reset
   end
 
   if defined? ERuby
-    def setup_benchmark_eruby
-      GC.start
+    def setup_eruby
       require 'stringio'
       ec = ERuby::Compiler.new
       @eruby = ec.compile_string(%'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH)
@@ -102,26 +111,20 @@ class BC_Flott < Bullshit::TimeCase
 
     def benchmark_eruby
       eval(@eruby)
-      output_reset_eruby
     end
 
-    def output_reset_eruby
-      output_reset
-      $stdout = StringIO.new(@output)
-    end
+    alias reset_eruby common_output_reset
   end
 
-  if defined? Amrita
-    def setup_benchmark_amrita
-      GC.start
-      @amrita = TemplateText.new(%'AAAAA<div id="test"></div>AAAAA\n' * LENGTH)
+  if defined? Amrita2
+    def setup_amrita
+      @amrita = Template.new(%'AAAAA<span am:src="test"></span>AAAAA\n' * LENGTH)
     end
 
     def benchmark_amrita
-      @amrita.expand(@output, { :test => 3.141 ** 2 })
-      output_reset
+      @output = @amrita.render_with(:test => 3.141 ** 2)
     end
-  end
 
-  compare :flott, :flott_e, :erb, :erb_e, :kashmir, :kashmir_e, :eruby, :amrita
+    alias reset_amrita common_output_reset
+  end
 end
