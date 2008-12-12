@@ -39,10 +39,11 @@ class FlottBenchmark < Bullshit::RepeatCase
   
   def setup
     @output = String.new 
+    @target = %'AAAAA9.865881AAAAA\n' * LENGTH
   end
 
   def common_output_reset
-    @output.empty? and raise "No output generated!"
+    @output != @target and raise "output incorrect"
     @output.replace ''
   end
 
@@ -56,7 +57,7 @@ class FlottBenchmark < Bullshit::RepeatCase
     @flott.evaluate(@env)
   end
 
-  alias reset_flott common_output_reset
+  alias after_flott common_output_reset
 
   def setup_flott_escaped
     @env    = Environment.new(@output)
@@ -67,7 +68,7 @@ class FlottBenchmark < Bullshit::RepeatCase
     @flott.evaluate(@env)
   end
 
-  alias reset_flott_escaped common_output_reset
+  alias after_flott_escaped common_output_reset
 
   def setup_erb
     @erb    = ERB.new(    %'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH, 0, '%<>')
@@ -77,7 +78,7 @@ class FlottBenchmark < Bullshit::RepeatCase
     @output = @erb.result
   end
 
-  alias reset_erb common_output_reset
+  alias after_erb common_output_reset
 
   if defined? Kashmir
     def setup_kashmir
@@ -88,7 +89,7 @@ class FlottBenchmark < Bullshit::RepeatCase
       @output = @kashmir.expand(Object.new)
     end
 
-    alias reset_kashmir common_output_reset
+    alias after_kashmir common_output_reset
 
     def setup_kashmir_escaped
       @kashmir = Kashmir.for_XML(%'AAAAA^(3.141 ** 2)AAAAA\n' * LENGTH)
@@ -98,7 +99,7 @@ class FlottBenchmark < Bullshit::RepeatCase
       @output = @kashmir.expand(Object.new)
     end
 
-    alias reset_kashmir_escaped common_output_reset
+    alias after_kashmir_escaped common_output_reset
   end
 
   if defined? ERuby
@@ -113,7 +114,7 @@ class FlottBenchmark < Bullshit::RepeatCase
       eval(@eruby)
     end
 
-    alias reset_eruby common_output_reset
+    alias after_eruby common_output_reset
   end
 
   if defined? Amrita2
@@ -122,9 +123,9 @@ class FlottBenchmark < Bullshit::RepeatCase
     end
 
     def benchmark_amrita
-      @output = @amrita.render_with(:test => 3.141 ** 2)
+      @output = @amrita.render_with(:test => 3.141 ** 2).dup
     end
 
-    alias reset_amrita common_output_reset
+    alias after_amrita common_output_reset
   end
 end
