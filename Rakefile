@@ -60,7 +60,6 @@ spec = Gem::Specification.new do |s|
   #### Load-time details: library and application (you will need one or both).
 
   s.require_path = 'lib'                         # Use these for libraries.
-  s.autorequire = 'flott'
 
   #s.bindir = "bin"                               # Use these for applications.
   #s.executables = ["bla.rb"]
