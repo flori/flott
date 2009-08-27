@@ -3,4 +3,4 @@
 require 'bullshit'
 include Bullshit
 $:.unshift File.dirname(__FILE__)
-require 'benchmark_flott.rb'
+require 'flott_benchmark.rb'

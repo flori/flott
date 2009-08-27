@@ -1,6 +1,14 @@
-require 'rake/gempackagetask'
-require 'rbconfig'
+begin
+  require 'rake/gempackagetask'
+  require 'rake/extensiontask'
+rescue LoadError
+end
 
+require 'rake/clean'
+CLEAN.include 'doc', 'coverage'
+CLOBBER.include Dir['benchmarks/data/*.{dat,log}']
+
+require 'rbconfig'
 include Config
 
 PKG_NAME = 'flott'
@@ -14,12 +22,12 @@ end
 
 desc "Testing library"
 task :test do
-  ruby '-I lib tests/runner.rb'
+  sh 'testrb -Ilib tests/test_*.rb'
 end
 
 desc "Testing library with line coverage"
 task :coverage do
-  sh 'rcov -xtests -I lib tests/runner.rb'
+    sh 'rcov -xtests -I lib tests/test_*.rb'
 end
 
 desc "Benchmarking library"
@@ -31,61 +39,56 @@ task :doc do
   ruby 'make_doc.rb'
 end
 
-desc "Removing generated files"
-task :clean do
-  rm_rf 'doc'
-  rm_rf 'coverage'
-end
+if defined?(Gem) and defined?(Rake::GemPackageTask)
+  spec = Gem::Specification.new do |s|
+    #### Basic information.
 
+    s.name = 'flott'
+    s.version = PKG_VERSION
+    s.summary = "Ruby as a templating language"
+    s.description = ""
 
-spec = Gem::Specification.new do |s|
-  #### Basic information.
+    #### Dependencies and requirements.
 
-  s.name = 'flott'
-  s.version = PKG_VERSION
-  s.summary = "Ruby as a templating language"
-  s.description = ""
+    #s.add_dependency('log4r', '> 1.0.4')
+    #s.requirements << ""
 
-  #### Dependencies and requirements.
+    s.files = PKG_FILES
 
-  #s.add_dependency('log4r', '> 1.0.4')
-  #s.requirements << ""
+    #### C code extensions.
 
-  s.files = PKG_FILES
+    #s.extensions << "ext/extconf.rb"
 
-  #### C code extensions.
+    #### Load-time details: library and application (you will need one or both).
 
-  #s.extensions << "ext/extconf.rb"
+    s.require_path = 'lib'                         # Use these for libraries.
 
-  #### Load-time details: library and application (you will need one or both).
+    #s.bindir = "bin"                               # Use these for applications.
+    #s.executables = ["bla.rb"]
+    #s.default_executable = "bla.rb"
 
-  s.require_path = 'lib'                         # Use these for libraries.
+    #### Documentation and testing.
 
-  #s.bindir = "bin"                               # Use these for applications.
-  #s.executables = ["bla.rb"]
-  #s.default_executable = "bla.rb"
+    s.has_rdoc = true
+    #s.extra_rdoc_files = rd.rdoc_files.reject { |fn| fn =~ /\.rb$/ }.to_a
+    #s.rdoc_options <<
+    #  '--title' <<  'Rake -- Ruby Make' <<
+    #  '--main' << 'README' <<
+    #  '--line-numbers'
+    s.test_files.concat Dir['tests/test_*.rb']
 
-  #### Documentation and testing.
+    #### Author and project details.
 
-  s.has_rdoc = true
-  #s.extra_rdoc_files = rd.rdoc_files.reject { |fn| fn =~ /\.rb$/ }.to_a
-  #s.rdoc_options <<
-  #  '--title' <<  'Rake -- Ruby Make' <<
-  #  '--main' << 'README' <<
-  #  '--line-numbers'
-  s.test_files << 'tests/runner.rb'
+    s.author = "Florian Frank"
+    s.email = "flori@ping.de"
+    s.homepage = "http://flott.rubyforge.org"
+    s.rubyforge_project = "flott"
+  end
 
-  #### Author and project details.
-
-  s.author = "Florian Frank"
-  s.email = "flori@ping.de"
-  s.homepage = "http://flott.rubyforge.org"
-  s.rubyforge_project = "flott"
-end
-
-Rake::GemPackageTask.new(spec) do |pkg|
-  pkg.need_tar = true
-  pkg.package_files += PKG_FILES
+  Rake::GemPackageTask.new(spec) do |pkg|
+    pkg.need_tar = true
+    pkg.package_files += PKG_FILES
+  end
 end
 
 desc m = "Writing version information for #{PKG_VERSION}"
@@ -105,6 +108,4 @@ EOT
   end
 end
 
-
 task :release => [ :clean, :version, :package ]
-  # vim: set et sw=2 ts=2:

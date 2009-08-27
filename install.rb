@@ -14,4 +14,3 @@ dest = File.join(dest, 'flott')
 mkdir_p dest
 file = 'lib/flott/cache.rb'
 install(file, dest)
-    # vim: set et sw=4 ts=4:

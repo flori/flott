@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 require 'test/unit'
 require 'flott'
 require 'stringio'
@@ -70,4 +68,3 @@ Toplevel2
 __EOT
   end
 end
-  # vim: set et sw=2 ts=2:

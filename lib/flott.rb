@@ -933,4 +933,3 @@ if $0 == __FILE__
   end
   parser.evaluate
 end
-  # vim: set et sw=2 ts=2: 
