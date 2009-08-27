@@ -68,6 +68,25 @@ module Flott
   require 'flott/version'
   autoload :Cache, 'flott/cache'
 
+  module ::Kernel
+    private
+
+    
+    def Flott(object, env = Environment.new, &block)
+      if object.respond_to?(:evaluate)
+        evaluate(object, env, &block)
+        env.output
+      elsif object.respond_to?(:to_str)
+        Flott.string_from_source(object.to_str, env, &block)
+      elsif object.respond_to?(:to_io)
+        Flott.string_from_source(object.to_io.read, env, &block)
+      else
+        raise TypeError,
+          "require an evaluable object, a String, or an IO object"
+      end
+    end
+  end
+
   class << self
     # True switches debugging mode on, false off. Defaults to false.
     attr_accessor :debug
@@ -78,6 +97,12 @@ module Flott
       env.instance_eval(&block) if block
       compiled.evaluate(env)
       self
+    end
+
+    # XXX
+    def compile(source)
+      parser = Flott::Parser.new(source)
+      parser.compile
     end
 
     # Create an output string from template source _source_, evaluated in the
@@ -483,6 +508,10 @@ module Flott
     # cache was used.
     attr_accessor :page_cache
 
+    # The environment this template was evaluated in during the last evaluate
+    # call. Returns nil if it wasn't evaluated yet.
+    attr_accessor :environment
+
     # Returns the newest _mtime_ of all the involved #pathes.
     def mtime
       @pathes.map { |path| File.stat(path).mtime }.max
@@ -490,8 +519,9 @@ module Flott
 
     # Evaluates this Template Object in the Environment _environment_ (first
     # argument).
-    def call(environment, *)
-      environment.page_cache = page_cache
+    def call(environment = Flott::Environment.new, *)
+      @environment = environment
+      @environment.page_cache = page_cache
       super
     rescue SyntaxError => e
       raise CallError.wrap(e)
@@ -933,3 +963,4 @@ if $0 == __FILE__
   end
   parser.evaluate
 end
+  # vim: set et sw=2 ts=2: 
