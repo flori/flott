@@ -71,7 +71,7 @@ class FlottBenchmark < Bullshit::RepeatCase
   alias after_flott_escaped common_output_reset
 
   def setup_erb
-    @erb    = ERB.new(    %'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH, 0, '%<>')
+    @erb    = ERB.new(    %'AAAAA<%=3.141 ** 2%>AAAAA\n' * LENGTH, 0, '-')
   end
 
   def benchmark_erb
