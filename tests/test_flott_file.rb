@@ -109,10 +109,10 @@ __EOT
     output = StringIO.new('')
     env = Environment.new(output)
     @parser2.evaluate(env)
-    assert_match /Toplevel/, output.string
+    assert_match(/Toplevel/, output.string)
     output.rewind
     @parser2.evaluate(env)
-    assert_match /Toplevel/, output.string
+    assert_match(/Toplevel/, output.string)
   end
 
   def test_dynamic_include
