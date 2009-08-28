@@ -164,11 +164,16 @@ __EOT
     assert_template_equal %Q'AAA&lt;BBB&gt;CCC', 'AAA[write "<BBB>"]CCC'
   end
 
-  def test_no_newline
+  def test_minus
     assert_template_equal "a\nb\nc", "a\n[print 'b']\nc"
-    assert_template_equal "ab\nc", "a  [-print 'b']\nc"
-    assert_template_equal "a  bc", "a  [print 'b'-]\nc"
-    assert_template_equal "abc", "a  [-print 'b'-]\nc"
+    assert_template_equal "a \t b \t c", "a \t [print 'b'] \t c"
+    assert_template_equal "a\nb\nc", "a\n \t [-print 'b']\nc"
+    assert_template_equal "a\nb \t c", "a\n \t [-print 'b'] \t c"
+    assert_template_equal "a\n \t bc", "a\n \t [print 'b'-] \t \nc"
+    assert_template_equal "abc", "a \t [-print 'b'-]\nc"
+    assert_template_equal "a\n&lt;bc", "a\n \t [-='<b'-] \t \nc"
+    assert_template_equal "a\n<bc", "a\n \t [-!'<b'-] \t \nc"
+    assert_template_equal "a\nc", "a\n \t [-#'<b'-] \t \nc"
     assert_template_equal <<DST, <<SRC
 <ul>
   <li>1</li>

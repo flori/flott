@@ -34,15 +34,14 @@ module Flott
         File.join(@cache.rootdir, @path)
       end
 
-      # Compile the file at _path_ with
-      # a Flott::Parser instance and return it. This implies
-      # that the _template_ attribute is set to the
-      # return value for later reuse without compiling.
+      # Compile the file at _path_ with a Flott instance and return it. This
+      # implies that the _template_ attribute is set to the return value for
+      # later reuse without compiling.
       def compile
-        parser    = Parser.new(File.read(rootpath), File.dirname(rootpath), @cache.rootdir, rootpath)
-        @template = parser.compile
+        @template = Flott.compile(File.read(rootpath), File.dirname(rootpath), @cache.rootdir, rootpath)
         @template.page_cache = @cache
         @mtime    = @template.mtime
+        @template
       end
     end
 

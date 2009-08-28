@@ -1,64 +1,3 @@
-# XXX
-# 
-# If two template files are saved in the current directory.
-# One file "header":
-#  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-#     "http://www.w3.org/TR/html4/strict.dtd">
-#  <html>
-#   <head>
-#    <title>Hello [=@name]!</title>
-#    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
-#   </head>
-#   <body>
-# And one file "template":
-#   [^header-]
-#   <h1>Hello [=@name]!</h1>
-#   [for i in 1..6
-#   if i % 2 == 0-]
-#   <b>Hello [=@name]!</b>
-#   [else-]
-#   <i>Hello [=@name]!</i>
-#   [end
-#   end-]
-#   </body>
-#  </html>
-# 
-# The parser can be used like this
-#  fp = Flott::Parser.from_filename('template')
-#  env = Flott::Environment.new
-#  env[:name] = "Florian"
-#  fp.evaluate(env)
-#
-# The output is created by including "header" into "template" with the
-# <tt>[^filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
-# <tt>[print @name]</tt> while <tt>[=@name]</tt> first calls
-# Flott::Parser.escape on @name. It's also possible to just print or puts
-# strings.
-#
-# Note the use of the assignment to the instance variable @name before
-# executing the template. The state passed to Parser#evaluate as
-# an environment and can be referenced in the template itself with
-# <tt>[=@name]</tt>.
-#
-# After execution the output is:
-#  <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-#     "http://www.w3.org/TR/html4/strict.dtd">
-#  <html>
-#   <head>
-#    <title>Hello Florian!</title>
-#    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
-#   </head>
-#   <body>
-#  
-#   <h1>Hello Florian!</h1>
-#   <i>Hello Florian!</i>
-#   <b>Hello Florian!</b>
-#   <i>Hello Florian!</i>
-#   <b>Hello Florian!</b>
-#   <i>Hello Florian!</i>
-#   <b>Hello Florian!</b>
-#   </body>
-#  </html>
 require 'strscan'
 
 # This module includes the Flott::Parser class, that can be used to compile
@@ -71,10 +10,14 @@ module Flott
   module ::Kernel
     private
 
-    
+    # Evaluate +object+ with Flott and return the output. +object+ can either be
+    # like a string (responding to :to_str), an IO instance (responding to
+    # :to_io), or respond to :evaluate like Flott::Template. The environment
+    # and (root) template used is attached to the output ring as the mehthods
+    # environment and template respectively.
     def Flott(object, env = Environment.new, &block)
       if object.respond_to?(:evaluate)
-        evaluate(object, env, &block)
+        Flott.evaluate(object, env, &block)
         env.output
       elsif object.respond_to?(:to_str)
         Flott.string_from_source(object.to_str, env, &block)
@@ -91,23 +34,56 @@ module Flott
     # True switches debugging mode on, false off. Defaults to false.
     attr_accessor :debug
 
-    # The already compiled ruby code is evaluated in the environment env.
-    # If no environment is given, a newly created environment is used.
+    # Return the compiled template of +source+ while passing the remaining
+    # arguments through to Flott::Parser.new.
+    def compile(source, workdir = nil, rootdir = nil, filename = nil)
+      parser = Flott::Parser.new(source, workdir, rootdir, filename)
+      parser.compile
+    end
+
+    # The already compiled ruby code is evaluated in the environment env. If no
+    # environment is given, a newly created environment is used. This method
+    # doesn't return the result directly, only via the effects on the environment.
     def evaluate(compiled, env = Environment.new, &block)
+      if !(EnvironmentMixin === env) and env.respond_to? :to_hash
+        env = Environment.new.update(env.to_hash)
+      end
       env.instance_eval(&block) if block
       compiled.evaluate(env)
       self
     end
 
-    # XXX
-    def compile(source)
-      parser = Flott::Parser.new(source)
-      parser.compile
+    # Evaluate the template source _source_ in environment _env_ and with the
+    # block _block_. If no environment is given, a newly created environment is
+    # used. This method doesn't return the result directly, only via the
+    # effects on the environment.
+    def evaluate_source(source, env = Environment.new, &block)
+      if !(EnvironmentMixin === env) and env.respond_to? :to_hash
+        env = Environment.new.update(env.to_hash)
+      end
+      env.instance_eval(&block) if block
+      parser = Parser.new(source)
+      parser.evaluate(env)
+      self
+    end
+
+    # Evaluate the template file _filename_ in environment _env_ and with the
+    # block _block_. If no environment is given, a newly created environment is
+    # used. This method doesn't return the result directly, only via the
+    # effects on the environment.
+    def evaluate_file(filename, env = Environment.new, &block)
+      if !(EnvironmentMixin === env) and env.respond_to? :to_hash
+        env = Environment.new.update(env.to_hash)
+      end
+      env.instance_eval(&block) if block
+      parser = Parser.from_filename(filename)
+      parser.evaluate(env)
+      self
     end
 
     # Create an output string from template source _source_, evaluated in the
-    # Environment _env_. If _block_ is given it is evaluated in the _env_ context
-    # as well.
+    # Environment _env_. If _block_ is given it is evaluated in the _env_
+    # context as well.
     def string_from_source(source, env = Environment.new, &block)
       if !(EnvironmentMixin === env) and env.respond_to? :to_hash
         env = Environment.new.update(env.to_hash)
@@ -262,6 +238,9 @@ module Flott
     # method returns it, otherwise nil is returned.
     attr_accessor :page_cache
 
+    # The template that was evaluated in this environment last.
+    attr_accessor :template
+
     # Returns the root directory of this environment, it should be
     # constant during the whole evaluation.
     def rootdir
@@ -331,12 +310,13 @@ module Flott
     # Memoize method with id _id_, if called.
     def memoize(id)
       cache = {}
+      old_method = method(id)
       sc = class << self; self; end
       sc.send(:define_method, id) do |*args|
         if cache.key?(args)
           cache[args]
         else
-          cache[args] = super
+          cache[args] = old_method.call(*args)
         end
       end
     end
@@ -387,7 +367,7 @@ module Flott
         string = ''
         PP.pp(o, string)
         @__output__ << @__escape__.call(string)
-        @__output__ << "\n" unless string[-1] == ?\n
+        @__output__ << $/ unless string =~ /\r?#$/\Z/
       end
       nil
     end
@@ -399,17 +379,17 @@ module Flott
         string = ''
         PP.pp(o, string)
         @__output__ << string
-        @__output__ << "\n" unless string[-1] == ?\n
+        @__output__ << $/ unless string =~ /\r?#$/\Z/
       end
       nil
     end
 
     # The usual IO#puts call without any escaping.
     def puts!(*objects)
-      for o in objects
+      for o in objects.flatten
         string = o.to_s
         @__output__ << string
-        @__output__ << "\n" unless string[-1] == ?\n
+        @__output__ << $/ unless string =~ /\r?#$/\Z/
       end
       nil
     end
@@ -417,10 +397,10 @@ module Flott
     # Like a call to IO#puts to print _objects_ after escaping all their #to_s
     # call results.
     def puts(*objects)
-      for o in objects
+      for o in objects.flatten
         string = @__escape__.call(o)
         @__output__ << string
-        @__output__ << "\n" unless string[-1] == ?\n
+        @__output__ << $/ unless string =~ /\r?#$/\Z/
       end
       nil
     end
@@ -521,23 +501,42 @@ module Flott
     # argument).
     def call(environment = Flott::Environment.new, *)
       @environment = environment
+      @environment.template = self
       @environment.page_cache = page_cache
-      super
+      result = super
+      attach_environment_to_output
+      result
     rescue SyntaxError => e
       raise CallError.wrap(e)
     end
 
     alias evaluate call
+
+    private
+
+    def attach_environment_to_output
+      o = @environment.output
+      unless o.respond_to?(:environment=)
+        class << o; self ; end.class_eval do
+          attr_accessor :environment
+
+          def template
+            environment.template
+          end
+        end
+      end
+      o.environment = @environment
+    end
   end
 
   # The Flott::Parser class creates parser objects, that can be used to compile
   # Flott template documents or files to Flott::Template instances.
   class Parser
-    # This class encapsulates the state, that is shared by all parsers
-    # that were activated during the parse phase.
+    # This class encapsulates the state, that is shared by all parsers that
+    # were activated during the parse phase.
     class State
-      # Creates a new Flott::Parser::State instance to hold the current
-      # parser state.
+      # Creates a new Flott::Parser::State instance to hold the current parser
+      # state.
       def initialize
         @opened       = 0
         @last_open    = nil
@@ -564,8 +563,8 @@ module Flott
       # included template file pathes.
       attr_reader :pathes
 
-      # A stack array, that contains the work directories of all active templates
-      # (during parsing).
+      # A stack array, that contains the work directories of all active
+      # templates (during parsing).
       attr_reader :directories
 
       attr_accessor :skip_cr
@@ -624,6 +623,15 @@ module Flott
 
     # [#comment]
     COMOPEN   =   /\[#\s*/
+
+    # Open succeded by minus deletes previous whitespaces until start of line.
+    MINPRIOPEN   =   /\[-=/
+
+    # Open succeded by minus deletes previous whitespaces until start of line.
+    MINRAWOPEN   =   /\[-!/
+
+    # Open succeded by minus deletes previous whitespaces until start of line.
+    MINCOMOPEN   =   /\[-#/
 
     # Open succeded by minus deletes previous whitespaces until start of line.
     MINOPEN      =   /\[-/
@@ -702,8 +710,8 @@ module Flott
     # The StringScanner instance of this Parser object.
     attr_reader :scanner
 
-    # Returns the shared state between all parsers that are parsing
-    # the current template and the included templates.
+    # Returns the shared state between all parsers that are parsing the current
+    # template and the included templates.
     def state
       @state ||= parent.state
     end
@@ -712,8 +720,8 @@ module Flott
     # parser of this parser.
     attr_accessor :parent
 
-    # Compute the rootdir of this parser (these parsers). Cache the
-    # result and return it.
+    # Compute the rootdir of this parser (these parsers). Cache the result and
+    # return it.
     attr_reader :rootdir
 
     # Returns the current work directory of this parser.
@@ -738,7 +746,7 @@ module Flott
         "::Flott::Template.new \{ |__env__| __env__.instance_eval %q{\n",
         "@__rootdir__ = '#{rootdir}'\n",
       ]
-      state.pathes << @filename if @filename
+      state.pathes << @filename if defined?(@filename)
       compile_inner
       state.compiled << "\n}\n}"
       string = state.compiled_string
@@ -780,8 +788,8 @@ module Flott
       # The parser this mode belongs to.
       attr_reader :parser
       
-      # The parsing mode uses this StringScanner instance for it's job,
-      # its the StringScanner of the current _parser_.
+      # The parsing mode uses this StringScanner instance for it's job, its the
+      # StringScanner of the current _parser_.
       def scanner
         @parser.scanner
       end
@@ -798,7 +806,7 @@ module Flott
       # Scan the template in TextMode.
       def scan
         case
-        when state.skip_cr && scanner.skip(/\r?\n/)
+        when state.skip_cr && scanner.skip(/[\t ]*\r?\n/)
           state.skip_cr = false
         when scanner.scan(ESCOPEN)
           state.text << '\\['
@@ -823,8 +831,35 @@ module Flott
           parser.goto_ruby_mode
           state.text2compiled
           state.compiled << "\n=begin\n"
+        when scanner.scan(MINPRIOPEN)
+          state.last_open = :PRIOPEN
+          if t = state.text.last
+            t.sub!(/[\t ]*\Z/, '')
+          end
+          parser.goto_ruby_mode
+          state.text2compiled
+          state.compiled << "@__output__<<@__escape__.call((\n"
+        when scanner.scan(MINRAWOPEN)
+          state.last_open = :RAWOPEN
+          if t = state.text.last
+            t.sub!(/[\t ]*\Z/, '')
+          end
+          parser.goto_ruby_mode
+          state.text2compiled
+          state.compiled << "@__output__<<((\n"
+        when scanner.scan(MINCOMOPEN)
+          state.last_open = :COMOPEN
+          if t = state.text.last
+            t.sub!(/[\t ]*\Z/, '')
+          end
+          parser.goto_ruby_mode
+          state.text2compiled
+          state.compiled << "\n=begin\n"
         when scanner.scan(MINOPEN)
           state.last_open = :OPEN
+          if t = state.text.last
+            t.sub!(/[\t ]*\Z/, '')
+          end
           parser.goto_ruby_mode
           state.text2compiled(false)
         when scanner.scan(OPEN)
@@ -852,8 +887,17 @@ module Flott
         case
         when state.opened == 0 && scanner.scan(MINCLOSE)
           state.skip_cr = true
+          case state.last_open
+          when :PRIOPEN
+            state.compiled << "\n))\n"
+          when :RAWOPEN
+            state.compiled << "\n).to_s)\n"
+          when :COMOPEN
+            state.compiled << "\n=end\n"
+          else
+            state.compiled << "\n"
+          end
           parser.goto_text_mode
-          state.compiled << "\n"
           state.last_open = nil
         when state.opened == 0 && scanner.scan(CLOSE) 
           parser.goto_text_mode
@@ -899,12 +943,12 @@ module Flott
     end
 
     def debug_output
-      STDERR.printf "%-20s:%s\n", :mode,        @current_mode.class
-      STDERR.printf "%-20s:%s\n", :last_open,   state.last_open
-      STDERR.printf "%-20s:%s\n", :opened,      state.opened
-      STDERR.printf "%-20s:%s\n", :directories, state.directories * ','
-      STDERR.printf "%-20s:%s\n", :peek,        scanner.peek(60)
-      STDERR.printf "%-20s:%s\n", :compiled,    state.compiled_string
+      warn "%-20s:%s\n" % [ :mode,        @current_mode.class ]
+      warn "%-20s:%s\n" % [ :last_open,   state.last_open ]
+      warn "%-20s:%s\n" % [ :opened,      state.opened ]
+      warn "%-20s:%s\n" % [ :directories, state.directories * ',' ]
+      warn "%-20s:%s\n" % [ :peek,        scanner.peek(60) ]
+      warn "%-20s:%s\n" % [ :compiled,    state.compiled_string ]
     end
     private :debug_output
 
@@ -940,8 +984,8 @@ module Flott
       ?' => '&apos;'
     })
 
-    # This Proc object escapes _string_, by substituting &<>"' with
-    # their respective html entities, and returns the result.
+    # This Proc object escapes _string_, by substituting &<>"' with their
+    # respective html entities, and returns the result.
     HTML_ESCAPE = lambda do |string|
       if string.respond_to?(:to_str)
         string.to_str.gsub(/[&<>"']/) { |c| ESCAPE_MAP[c[0]] }
@@ -956,6 +1000,7 @@ module Flott
 end
 
 if $0 == __FILE__
+  Flott.debug = $DEBUG
   parser = if filename = ARGV.shift
     Flott::Parser.from_filename(filename)
   else
@@ -963,4 +1008,3 @@ if $0 == __FILE__
   end
   parser.evaluate
 end
-  # vim: set et sw=2 ts=2: 

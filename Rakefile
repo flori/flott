@@ -41,43 +41,21 @@ end
 
 if defined?(Gem) and defined?(Rake::GemPackageTask)
   spec = Gem::Specification.new do |s|
-    #### Basic information.
-
     s.name = 'flott'
     s.version = PKG_VERSION
     s.summary = "Ruby as a templating language"
     s.description = ""
 
-    #### Dependencies and requirements.
-
-    #s.add_dependency('log4r', '> 1.0.4')
-    #s.requirements << ""
-
     s.files = PKG_FILES
-
-    #### C code extensions.
-
-    #s.extensions << "ext/extconf.rb"
-
-    #### Load-time details: library and application (you will need one or both).
 
     s.require_path = 'lib'                         # Use these for libraries.
 
-    #s.bindir = "bin"                               # Use these for applications.
-    #s.executables = ["bla.rb"]
-    #s.default_executable = "bla.rb"
-
-    #### Documentation and testing.
-
     s.has_rdoc = true
-    #s.extra_rdoc_files = rd.rdoc_files.reject { |fn| fn =~ /\.rb$/ }.to_a
-    #s.rdoc_options <<
-    #  '--title' <<  'Rake -- Ruby Make' <<
-    #  '--main' << 'README' <<
-    #  '--line-numbers'
+    s.extra_rdoc_files << 'doc-main.txt'
+    s.rdoc_options <<
+      '--title' <<  'Flott­- Floris Tolle Templates' <<
+      '--main' << 'doc-main.txt'
     s.test_files.concat Dir['tests/test_*.rb']
-
-    #### Author and project details.
 
     s.author = "Florian Frank"
     s.email = "flori@ping.de"

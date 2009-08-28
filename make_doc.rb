@@ -2,4 +2,4 @@
 
 $outdir = 'doc/'
 puts "Creating documentation in '#$outdir'."
-system "rdoc -o #$outdir lib/flott.rb lib/flott/*.rb"
+system "rdoc -m doc-main.txt -o #$outdir doc-main.txt lib/flott.rb lib/flott/*.rb"

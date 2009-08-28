@@ -1,0 +1,76 @@
+== Usage
+
+If you want to play with the parser it's best to use the Flott method:
+
+ Flott('1 + 1 = [=1 + 1]') # => "1 + 1 = 2"
+
+
+However if you want to take advantage of the directory tree walking and inclusion
+features, you have to use methods.
+
+If two template files are stored in the current directory.
+One file "header":
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+ <html>
+  <head>
+   <title>Hello [=@name]!</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
+  </head>
+  <body>
+And one file "template":
+  [^header-]
+  <h1>Hello [=@name]!</h1>
+  [for i in 1..6
+  if i % 2 == 0-]
+  <b>Hello [=@name]!</b>
+  [else-]
+  <i>Hello [=@name]!</i>
+  [end
+  end-]
+  </body>
+ </html>
+
+The parser can be used like this
+ fp = Flott::Parser.from_filename('template')
+ env = Flott::Environment.new
+ env[:name] = "Florian"
+ fp.evaluate(env)
+
+Or this:
+ puts Flott.string_from_file(filename, :name => "Florian") 
+
+You should also take a look at the other convenience methods in the Flott
+module.
+
+The output is created by including "header" into "template" with the
+<tt>[^filename]</tt> syntax. <tt>[!@name]</tt> is a shortcut for
+<tt>[print @name]</tt> while <tt>[=@name]</tt> first calls
+Flott::Parser.escape on @name. It's also possible to just print or puts
+strings.
+
+Note the use of the assignment to the instance variable @name before
+executing the template. The state passed to Parser#evaluate as
+an environment and can be referenced in the template itself with
+<tt>[=@name]</tt>.
+
+After execution the output is:
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+ <html>
+  <head>
+   <title>Hello Florian!</title>
+   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-15">
+  </head>
+  <body>
+ 
+  <h1>Hello Florian!</h1>
+  <i>Hello Florian!</i>
+  <b>Hello Florian!</b>
+  <i>Hello Florian!</i>
+  <b>Hello Florian!</b>
+  <i>Hello Florian!</i>
+  <b>Hello Florian!</b>
+  </body>
+ </html>
+

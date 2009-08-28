@@ -85,6 +85,10 @@ __EOT
   def test_execute
     output = StringIO.new('')
     env = Environment.new(output)
+    assert_raise(NoMethodError) do
+      @parser.evaluate(env) 
+    end
+    output.rewind
     env[:name] = 'Flor<i>an'
     @parser.evaluate(env) 
     assert_equal(@expected, output.string)
