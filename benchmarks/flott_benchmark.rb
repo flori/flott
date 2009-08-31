@@ -43,7 +43,8 @@ class FlottBenchmark < Bullshit::RepeatCase
   end
 
   def common_output_reset
-    @output != @target and raise "output incorrect"
+    @output != @target and
+      raise "output incorrect: #{@output.inspect} != #{@target.inspect}"
     @output.replace ''
   end
 
@@ -114,7 +115,10 @@ class FlottBenchmark < Bullshit::RepeatCase
       eval(@eruby)
     end
 
-    alias after_eruby common_output_reset
+    def after_eruby
+      common_output_reset
+      $stdout.rewind
+    end
   end
 
   if defined? Amrita2
