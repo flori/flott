@@ -9,7 +9,13 @@ class FlottBenchmark < Bullshit::RepeatCase
     window_size 50
   end
 
-  iterations 1000
+  autocorrelation do
+    alpha_level 0.05
+    max_lags    50
+    file        yes
+  end
+
+  iterations 200
 
   output_dir File.join(File.dirname(__FILE__), 'data')
   data_file  yes
@@ -35,7 +41,7 @@ class FlottBenchmark < Bullshit::RepeatCase
   rescue LoadError
   end
  
-  LENGTH = 100
+  LENGTH = 500
   
   def setup
     @output = String.new 
