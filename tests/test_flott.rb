@@ -28,7 +28,11 @@ class TC_Flott < Test::Unit::TestCase
 
   def test_for_errors
     assert_template_equal 'puts "\n"', 'puts "\n"'
-    assert_template_equal "123\n", '[print [1, 2, "3"], "\n" ]'
+    if RUBY_VERSION =~ /\A1.[0-8]/
+      assert_template_equal "123\n", '[print [1, 2, "3"], "\n" ]'
+    else
+      assert_template_equal "[1, 2, &quot;3&quot;]\n", '[print [1, 2, "3"], "\n" ]'
+    end
     assert_template_equal "a\b", '[print "a\b" ]' # 1
     assert_template_equal "a\b", '[print "a\\b" ]' # 2
     assert_template_equal "a\\b", '[print "a\\\b" ]' # 3
@@ -71,20 +75,20 @@ __EOT
     env = Environment.new
     env.output = output = ''
     assert_equal ["@__escape__", "@__output__"].sort,
-      env.instance_variables.sort
+      env.instance_variables.map { |x| x.to_s }.sort
     env[:foo] = :foo
     assert_equal ["@__escape__", "@__output__", "@foo"].sort,
-      env.instance_variables.sort
+      env.instance_variables.map { |x| x.to_s }.sort
     assert_equal env[:foo], :foo
     assert_equal env[:@foo], :foo
     env[:@bar] = :bar
     assert_equal ["@__escape__", "@__output__", "@bar", "@foo"].sort,
-      env.instance_variables.sort
+      env.instance_variables.map { |x| x.to_s }.sort
     assert_equal env[:bar], :bar
     assert_equal env[:@bar], :bar
     env.update({ :baz => :baz })
     assert_equal ["@__escape__", "@__output__", "@bar", "@baz", "@foo"].sort,
-      env.instance_variables.sort
+      env.instance_variables.map { |x| x.to_s }.sort
     assert_equal env[:baz], :baz
     assert_equal env[:@baz], :baz
     assert_equal env[:__output__], output
