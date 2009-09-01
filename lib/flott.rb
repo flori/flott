@@ -149,7 +149,7 @@ module Flott
     def interpret_filename(filename)
       filename.untaint
       if filename[0] == ?/ 
-        filename = File.join(rootdir, filename[1, filename.size])
+        filename = File.join(rootdir, filename[1..-1])
       elsif workdir
         filename = File.join(workdir, filename)
       end
@@ -160,7 +160,7 @@ module Flott
     def interpret_filename_as_page(filename)
       filename.untaint
       if filename[0] == ?/ 
-        filename = filename[1, filename.size]
+        filename = filename[1..-1]
       elsif workdir
         filename = File.expand_path(File.join(workdir, filename))
         filename[rootdir] = ''
@@ -187,10 +187,10 @@ module Flott
     private :check_secure_path
 
     
-    def sub_path(sp, path)
+    def sub_path?(sp, path)
       sp[/\A#{path}/] == path
     end
-    private :sub_path
+    private :sub_path?
   end
 
   # This module can be included into classes that should act as an environment
@@ -657,13 +657,13 @@ module Flott
     # Regexp matching the escape character at least once.
     ESC_CLOSURE       =   /\\(\\*)/
 
-    # Regexp machthing curly brackets '{' or '}'.
+    # Regexp matching curly brackets '{' or '}'.
     CURLY     =   /[{}]/
 
-    # Regexp machthing open curly bracket like '{'.
+    # Regexp matching open curly bracket like '{'.
     CURLYOPEN =   /\{/
 
-    # Regexp machthing open curly bracket like '}'.
+    # Regexp matching open curly bracket like '}'.
     CURLYCLOSE=   /\}/
 
     # Creates a Parser object. _workdir_ is the directory, on which relative
@@ -684,12 +684,12 @@ module Flott
       else
         @rootdir = @workdir
       end
-      sub_path(@workdir, @rootdir) or
+      sub_path?(@workdir, @rootdir) or
         raise SecurityViolation, "#{@workdir} isn't a sub path of '#{@rootdir}'"
       if filename
         check_secure_path(filename)
         @filename  = File.expand_path(filename)
-        sub_path(@filename, @workdir) or
+        sub_path?(@filename, @workdir) or
           raise SecurityViolation, "#{@filename} isn't a sub path of '#{@workdir}"
       end
       @ruby = RubyMode.new(self)
