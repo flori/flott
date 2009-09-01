@@ -41,6 +41,11 @@ class FlottBenchmark < Bullshit::RepeatCase
   rescue LoadError
   end
  
+  begin
+    require "tenjin"
+  rescue LoadError
+  end
+
   LENGTH = 500
   
   def setup
@@ -137,5 +142,39 @@ class FlottBenchmark < Bullshit::RepeatCase
     end
 
     alias after_amrita common_output_reset
+  end
+
+  if defined? Tenjin
+    require 'tempfile'
+
+    def setup_tenjin
+      template = %'AAAAA\#{3.141 ** 2}AAAAA\n' * LENGTH
+      tempfile = Tempfile.new 'temp'
+      tempfile.write template
+      tempfile.fsync
+      @template_name = tempfile.path
+      @tenjin  = Tenjin::Engine.new
+    end
+
+    def benchmark_tenjin
+      @output = @tenjin.render(@template_name)
+    end
+
+    alias after_tenjin common_output_reset
+
+    def setup_tenjin_escaped
+      template = %'AAAAA${3.141 ** 2}AAAAA\n' * LENGTH
+      tempfile = Tempfile.new 'temp'
+      tempfile.write template
+      tempfile.fsync
+      @template_name = tempfile.path
+      @tenjin  = Tenjin::Engine.new
+    end
+
+    def benchmark_tenjin_escaped
+      @output = @tenjin.render(@template_name)
+    end
+
+    alias after_tenjin_escaped common_output_reset
   end
 end
