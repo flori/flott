@@ -484,6 +484,9 @@ module Flott
     # The pathes of the template and all included sub-templates.
     attr_accessor :pathes
 
+    # The template's source code after compilation.
+    attr_accessor :source
+
     # Returns the Flott::Cache this Template originated from or nil, if no
     # cache was used.
     attr_accessor :page_cache
@@ -749,9 +752,10 @@ module Flott
       state.pathes << @filename if defined?(@filename)
       compile_inner
       state.compiled << "\n}\n}"
-      string = state.compiled_string
-      template = eval(string, nil, '(flott)')
+      source = state.compiled_string
+      template = eval(source, nil, '(flott)')
       template.pathes = state.pathes
+      template.source = source
       template
     rescue SyntaxError => e
       raise EvalError.wrap(e)
