@@ -15,6 +15,14 @@ class FlottBenchmark < Bullshit::RepeatCase
     file        yes
   end
 
+  run? do |name|
+    if benchmark = ENV['BENCHMARK']
+      benchmark.split(/,/).any? { |b| b.to_sym == name }
+    else
+      true
+    end
+  end
+
   iterations 200
 
   output_dir File.join(File.dirname(__FILE__), 'data')
