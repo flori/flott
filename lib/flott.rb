@@ -981,7 +981,7 @@ module Flott
       ?< => '&lt;',
       ?> => '&gt;',
       ?" => '&quot;',
-      ?' => '&apos;'
+      ?' => '&#039;'
     })
 
     # This Proc object escapes _string_, by substituting &<>"' with their
