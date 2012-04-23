@@ -148,7 +148,7 @@ module Flott
     # pathes are treated relative to this parsers workdir.
     def interpret_filename(filename)
       filename.untaint
-      if filename[0] == ?/ 
+      if filename[0] == ?/
         filename = File.join(rootdir, filename[1..-1])
       elsif workdir
         filename = File.join(workdir, filename)
@@ -159,7 +159,7 @@ module Flott
 
     def interpret_filename_as_page(filename)
       filename.untaint
-      if filename[0] == ?/ 
+      if filename[0] == ?/
         filename = filename[1..-1]
       elsif workdir
         filename = File.expand_path(File.join(workdir, filename))
@@ -186,7 +186,7 @@ module Flott
     end
     private :check_secure_path
 
-    
+
     def sub_path?(sp, path)
       sp[/\A#{path}/] == path
     end
@@ -224,7 +224,7 @@ module Flott
     def output
       @__output__
     end
-    
+
     # Sets the output object for this Environment object, to _output_. It
     # should respond to the #<< method of appending strings.
     def output=(output)
@@ -322,7 +322,7 @@ module Flott
     end
 
     private
-   
+
     include Flott::FilenameMixin
 
     # Dynamically Include the template _filename_ into the current template,
@@ -339,7 +339,7 @@ module Flott
     rescue # TODO logging??
       print "[dynamic include of '#{filename}' failed]"
     end
-    
+
     # Like Kernel#p but with escaping.
     def p(*objects)
       for o in objects
@@ -393,7 +393,7 @@ module Flott
       end
       nil
     end
-    
+
     # Like a call to IO#puts to print _objects_ after escaping all their #to_s
     # call results.
     def puts(*objects)
@@ -613,7 +613,7 @@ module Flott
 
     # Regexp matching an escaped open square bracket like '\['.
     ESCOPEN   =   /\\\[/
-    
+
     # [^filename]
     INCOPEN   =   /\[\^\s*([^\]]+?)\s*(-)?\]/
     # TODO allow ] in filenames?
@@ -781,8 +781,8 @@ module Flott
       parser.parent = self
       parser.compile_inner(@workdir != workdir)
     end
-  
-    # The base parsing mode. 
+
+    # The base parsing mode.
     class Mode
       # Creates a parsing mode for _parser_.
       def initialize(parser)
@@ -791,7 +791,7 @@ module Flott
 
       # The parser this mode belongs to.
       attr_reader :parser
-      
+
       # The parsing mode uses this StringScanner instance for it's job, its the
       # StringScanner of the current _parser_.
       def scanner
@@ -903,7 +903,7 @@ module Flott
           end
           parser.goto_text_mode
           state.last_open = nil
-        when state.opened == 0 && scanner.scan(CLOSE) 
+        when state.opened == 0 && scanner.scan(CLOSE)
           parser.goto_text_mode
           case state.last_open
           when :PRIOPEN

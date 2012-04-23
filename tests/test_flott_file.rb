@@ -1,4 +1,4 @@
-require 'test/unit'
+require 'test_helper'
 require 'flott'
 require 'stringio'
 
@@ -86,14 +86,14 @@ __EOT
     output = StringIO.new('')
     env = Environment.new(output)
     assert_raise(NoMethodError) do
-      @parser.evaluate(env) 
+      @parser.evaluate(env)
     end
     output.rewind
     env[:name] = 'Flor<i>an'
-    @parser.evaluate(env) 
+    @parser.evaluate(env)
     assert_equal(@expected, output.string)
     output.rewind
-    @parser.evaluate(env) 
+    @parser.evaluate(env)
     assert_equal(@expected, output.string)
   end
 

@@ -1,4 +1,4 @@
-require 'test/unit'
+require 'test_helper'
 require 'flott'
 require 'stringio'
 
@@ -36,7 +36,7 @@ class TC_Flott < Test::Unit::TestCase
     assert_template_equal "a\b", '[print "a\b" ]' # 1
     assert_template_equal "a\b", '[print "a\\b" ]' # 2
     assert_template_equal "a\\b", '[print "a\\\b" ]' # 3
-    assert_template_equal "a\\b", '[print "a\\\\b" ]' # 4 
+    assert_template_equal "a\\b", '[print "a\\\\b" ]' # 4
     assert_template_equal "a\\\b", '[print "a\\\\\b" ]' # 5
     assert_template_equal "a\\\b", '[print "a\\\\\\b" ]' # 6
     assert_template_equal "a\\\\b", '[print "a\\\\\\\\b" ]' # 7

@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'bullshit'
+require 'tins/xt'
 
 class FlottBenchmark < Bullshit::RepeatCase
   warmup      true
@@ -15,15 +16,7 @@ class FlottBenchmark < Bullshit::RepeatCase
     file        yes
   end
 
-  run? do |name|
-    if benchmark = ENV['BENCHMARK']
-      benchmark.split(/,/).any? { |b| b.to_sym == name }
-    else
-      true
-    end
-  end
-
-  iterations 200
+  iterations 1000
 
   output_dir File.join(File.dirname(__FILE__), 'data')
   data_file  yes
@@ -33,31 +26,15 @@ class FlottBenchmark < Bullshit::RepeatCase
   require 'flott'
   include Flott
 
-  begin
-    require 'kashmir'
-  rescue LoadError
-  end
-
-  begin
-    require 'eruby'
-  rescue LoadError
-  end
-
-  begin
-    require "amrita2"
-    include Amrita2
-  rescue LoadError
-  end
- 
-  begin
-    require "tenjin"
-  rescue LoadError
-  end
+  require_maybe 'kashmir'
+  require_maybe 'eruby'
+  require_maybe "amrita2" and include Amrita2
+  require_maybe "tenjin"
 
   LENGTH = 500
-  
+
   def setup
-    @output = String.new 
+    @output = String.new
     @target = %'AAAAA9.865881AAAAA\n' * LENGTH
   end
 
