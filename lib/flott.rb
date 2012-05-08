@@ -5,7 +5,7 @@ require 'strscan'
 # in a Flott::Environment.
 module Flott
   require 'flott/version'
-  autoload :Cache, 'flott/cache'
+  require 'flott/cache'
 
   module ::Kernel
     private
@@ -139,6 +139,8 @@ module Flott
   # calling the evaluated Proc object.
   class CallError < ParserError; end
 
+  # This exception is raised if an attempt is made to parse or include a path
+  # that is considered insecure.
   class SecurityViolation < ParserError; end
 
   # This module contains methods to interpret filenames of the templates.
