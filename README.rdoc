@@ -6,7 +6,7 @@ If you want to play with the parser it's best to use the Flott method:
 
 
 However if you want to take advantage of the directory tree walking and inclusion
-features, you have to use methods.
+features, you have to use actual files:
 
 If two template files are stored in the current directory.
 One file "header":
@@ -38,7 +38,7 @@ The parser can be used like this
  fp.evaluate(env)
 
 Or this:
- puts Flott.string_from_file(filename, :name => "Florian") 
+ puts Flott.string_from_file(filename, :name => "Florian")
 
 You should also take a look at the other convenience methods in the Flott
 module.
