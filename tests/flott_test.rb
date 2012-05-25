@@ -2,7 +2,7 @@ require 'test_helper'
 require 'flott'
 require 'stringio'
 
-class TC_Flott < Test::Unit::TestCase
+class FlottTest < Test::Unit::TestCase
   include Flott
 
   def assert_template_equal(expected, template, hash = {})

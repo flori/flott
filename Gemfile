@@ -5,5 +5,9 @@ source :rubygems
 gemspec
 
 group :test do
-  gem 'simplecov', '0.6.2', :platform => :mri_19
+  gem 'simplecov', '0.6.4', :platform => :mri_19
+end
+
+group :development do
+  gem 'utils'
 end

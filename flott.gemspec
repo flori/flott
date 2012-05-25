@@ -2,21 +2,21 @@
 
 Gem::Specification.new do |s|
   s.name = "flott"
-  s.version = "1.0.0"
+  s.version = "1.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Florian Frank"]
-  s.date = "2012-05-11"
+  s.date = "2012-05-25"
   s.description = "Ruby as a templating language"
   s.email = "flori@ping.de"
   s.extra_rdoc_files = ["README.rdoc", "lib/flott.rb", "lib/flott/version.rb", "lib/flott/cache.rb"]
-  s.files = [".gitignore", ".travis.yml", "Gemfile", "README.rdoc", "Rakefile", "VERSION", "benchmarks/data/.keep", "benchmarks/flott_benchmark.rb", "benchmarks/runner.rb", "doc-main.txt", "flott.gemspec", "install.rb", "lib/flott.rb", "lib/flott/cache.rb", "lib/flott/version.rb", "make_doc.rb", "tests/templates/header", "tests/templates/subdir/deeptemplate", "tests/templates/subdir/included", "tests/templates/subdir/subdir2/deepincluded2", "tests/templates/subdir/subdir2/included2", "tests/templates/subdir/subdir3/included3", "tests/templates/template", "tests/templates/template2", "tests/templates/toplevel", "tests/templates/toplevel2", "tests/test_cache.rb", "tests/test_flott.rb", "tests/test_flott_file.rb", "tests/test_helper.rb"]
+  s.files = [".gitignore", ".travis.yml", "COPYING", "Gemfile", "README.rdoc", "Rakefile", "VERSION", "benchmarks/data/.keep", "benchmarks/flott_benchmark.rb", "benchmarks/runner.rb", "flott.gemspec", "lib/flott.rb", "lib/flott/cache.rb", "lib/flott/version.rb", "tests/cache_test.rb", "tests/flott_file_test.rb", "tests/flott_test.rb", "tests/templates/header", "tests/templates/subdir/deeptemplate", "tests/templates/subdir/included", "tests/templates/subdir/subdir2/deepincluded2", "tests/templates/subdir/subdir2/included2", "tests/templates/subdir/subdir3/included3", "tests/templates/template", "tests/templates/template2", "tests/templates/toplevel", "tests/templates/toplevel2", "tests/test_helper.rb"]
   s.homepage = "http://github.com/flori/flott"
   s.rdoc_options = ["--title", "Flott - Ruby as a templating language", "--main", "README.rdoc"]
   s.require_paths = ["lib"]
   s.rubygems_version = "1.8.24"
   s.summary = "Ruby as a templating language"
-  s.test_files = ["tests/test_flott_file.rb", "tests/test_flott.rb", "tests/test_cache.rb", "tests/test_helper.rb"]
+  s.test_files = ["tests/cache_test.rb", "tests/flott_test.rb", "tests/flott_file_test.rb", "tests/test_helper.rb"]
 
   if s.respond_to? :specification_version then
     s.specification_version = 3
