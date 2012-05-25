@@ -2,7 +2,7 @@ require 'test_helper'
 require 'flott'
 require 'stringio'
 
-class TC_FlottFile < Test::Unit::TestCase
+class FlottFileTest < Test::Unit::TestCase
   include Flott
   Flott.debug = false
   def setup

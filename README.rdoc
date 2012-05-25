@@ -1,12 +1,21 @@
+= Flott - Floris Tolle Templates
+
+This is ruby templating system with some unique features.
+
+== Installation
+
+Use rubygems and just type:
+
+# gem install permutation
+
 == Usage
 
 If you want to play with the parser it's best to use the Flott method:
 
  Flott('1 + 1 = [=1 + 1]') # => "1 + 1 = 2"
 
-
-However if you want to take advantage of the directory tree walking and inclusion
-features, you have to use actual files:
+However if you want to take advantage of the directory tree walking and
+inclusion features, you have to use actual files:
 
 If two template files are stored in the current directory.
 One file "header":
@@ -74,3 +83,12 @@ After execution the output is:
   </body>
  </html>
 
+== Author
+
+Florian Frank mailto:flori@ping.de
+
+== License
+
+This is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License Version 2 as published by the Free
+Software Foundation: www.gnu.org/copyleft/gpl.html

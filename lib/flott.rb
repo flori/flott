@@ -369,7 +369,7 @@ module Flott
         string = ''
         PP.pp(o, string)
         @__output__ << @__escape__.call(string)
-        @__output__ << $/ unless string =~ /\r?#$/\Z/
+        @__output__ << $/ unless string =~ /\r?#$/\z/
       end
       nil
     end
@@ -381,7 +381,7 @@ module Flott
         string = ''
         PP.pp(o, string)
         @__output__ << string
-        @__output__ << $/ unless string =~ /\r?#$/\Z/
+        @__output__ << $/ unless string =~ /\r?#$/\z/
       end
       nil
     end
@@ -391,7 +391,7 @@ module Flott
       for o in objects.flatten
         string = o.to_s
         @__output__ << string
-        @__output__ << $/ unless string =~ /\r?#$/\Z/
+        @__output__ << $/ unless string =~ /\r?#$/\z/
       end
       nil
     end
@@ -402,7 +402,7 @@ module Flott
       for o in objects.flatten
         string = @__escape__.call(o)
         @__output__ << string
-        @__output__ << $/ unless string =~ /\r?#$/\Z/
+        @__output__ << $/ unless string =~ /\r?#$/\z/
       end
       nil
     end
@@ -840,7 +840,7 @@ module Flott
         when scanner.scan(MINPRIOPEN)
           state.last_open = :PRIOPEN
           if t = state.text.last
-            t.sub!(/[\t ]*\Z/, '')
+            t.sub!(/[\t ]*\z/, '')
           end
           parser.goto_ruby_mode
           state.text2compiled
@@ -848,7 +848,7 @@ module Flott
         when scanner.scan(MINRAWOPEN)
           state.last_open = :RAWOPEN
           if t = state.text.last
-            t.sub!(/[\t ]*\Z/, '')
+            t.sub!(/[\t ]*\z/, '')
           end
           parser.goto_ruby_mode
           state.text2compiled
@@ -856,7 +856,7 @@ module Flott
         when scanner.scan(MINCOMOPEN)
           state.last_open = :COMOPEN
           if t = state.text.last
-            t.sub!(/[\t ]*\Z/, '')
+            t.sub!(/[\t ]*\z/, '')
           end
           parser.goto_ruby_mode
           state.text2compiled
@@ -864,7 +864,7 @@ module Flott
         when scanner.scan(MINOPEN)
           state.last_open = :OPEN
           if t = state.text.last
-            t.sub!(/[\t ]*\Z/, '')
+            t.sub!(/[\t ]*\z/, '')
           end
           parser.goto_ruby_mode
           state.text2compiled(false)

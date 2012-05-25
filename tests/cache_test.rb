@@ -3,7 +3,7 @@ require 'flott'
 require 'stringio'
 require 'fileutils'
 
-class TC_Cache < Test::Unit::TestCase
+class CacheTest < Test::Unit::TestCase
   include FileUtils
   include Flott
 
